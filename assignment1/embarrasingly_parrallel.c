@@ -5,6 +5,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <string.h>
+#include <limits.h>
 
 typedef enum distribution
 {
@@ -107,11 +108,11 @@ void* factorialThread(void *arg)
 
 
 int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
-    input_deck_e *input_deck, int *num_tasks, int *num_items)
+    input_deck_e *input_deck, int *num_tasks, int *num_items, int *max_value)
 {
     int c;
 
-    while((c = getopt(argc, argv, "o:i:d:n:e:")) != -1)
+    while((c = getopt(argc, argv, "o:i:d:n:e:m:")) != -1)
     {
         switch(c)
         {
@@ -147,6 +148,9 @@ int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
             case 'e': // number of elements
                 *num_items = atoi(optarg);
                 break;
+            case 'm': // the max value in the input deck
+                *max_value = atoi(optarg);
+                break;
             default:
                 printf("error\n");
                 break;
@@ -177,11 +181,12 @@ int main(int argc, char **argv)
     struct timespec end_time;
     struct timespec diff_time;
 
-    options_t ops;
-    task_t  *tasks;
-    operation_e oper;
-    input_deck_e input_deck;
-    int i;
+    options_t       ops;
+    task_t          *tasks;
+    operation_e     oper;
+    input_deck_e    input_deck;
+    int             i;
+    int             max_value = INT_MAX;
 
     printf("Hello World!\n");
 
@@ -189,9 +194,10 @@ int main(int argc, char **argv)
     ops.num_tasks = 4;
     ops.num_items = 10000;
     ops.distribution = BLOCK;
+    input_deck = RANDOM;
 
     // get options
-    if( get_options(argc, argv, &oper, &ops.distribution, &input_deck, &ops.num_tasks, &ops.num_items) == -1)
+    if( get_options(argc, argv, &oper, &ops.distribution, &input_deck, &ops.num_tasks, &ops.num_items, &max_value) == -1)
     {
         printf("Invalid agrument\n");
         return -1;
@@ -204,9 +210,16 @@ int main(int argc, char **argv)
 
     tasks = calloc(ops.num_tasks, sizeof(*tasks));
 
+    // seed the random number generator if needed
+    if(input_deck == RANDOM)
+        srand(time(NULL));
+
     // fill in data
     for(i = 0; i < ops.num_items; ++i)
-        ops.data[i] = i;
+    {
+        if(input_deck == RANDOM)
+            ops.data[i] = rand();
+    }
     
     // start timer
     clock_gettime(CLOCK_MONOTONIC, &start_time); 
@@ -229,8 +242,28 @@ int main(int argc, char **argv)
     clock_gettime(CLOCK_MONOTONIC, &end_time);
 
     timespec_diff(start_time, end_time, &diff_time);
+
+    // print the input values
+    printf("Number of tasks: %d\n", ops.num_tasks);
+    printf("Number of items: %d\n", ops.num_items);
+    printf("Distribution: ");
+    if(ops.distribution == BLOCK)
+        printf("BLOCK\n");
+    else if(ops.distribution == CYCLIC)
+        printf("CYCLIC\n");
+    printf("Input Deck: ");
+    if(input_deck == RANDOM)
+        printf("RANDOM\n");
+    else if(input_deck == VALUE_RAMP)
+        printf("VALUE_RAMP\n");
+    printf("Operation: ");
+    if(oper == FACTORIAL)
+        printf("FACTORIAL\n");
+    else if(oper == NEGATE)
+        printf("NEGATE\n");
+
     // report results
-    printf("Overall time: %i.%li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+    printf("%i %i Overall time: %i.%09li\n", (int)start_time.tv_sec, (int)end_time.tv_sec, (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
     // cleanup
     if(ops.data != NULL)
