@@ -80,7 +80,7 @@ void* negateThread(void *arg)
     else 
         computeMyCyclicPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
 
-    printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
+    //printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
     // do the computation
     for(i = my_lo; i < my_hi; ++i)
         ops->data[i] = -ops->data[i];
@@ -107,11 +107,11 @@ void* factorialThread(void *arg)
 
 
 int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
-    input_deck_e *input_deck, int *num_tasks)
+    input_deck_e *input_deck, int *num_tasks, int *num_items)
 {
     int c;
 
-    while((c = getopt(argc, argv, "o:i:d:n:")) != -1)
+    while((c = getopt(argc, argv, "o:i:d:n:e:")) != -1)
     {
         switch(c)
         {
@@ -144,6 +144,9 @@ int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
                 // TODO this will crash if an integer is not passed
                 *num_tasks = atoi(optarg);
                 break;
+            case 'e': // number of elements
+                *num_items = atoi(optarg);
+                break;
             default:
                 printf("error\n");
                 break;
@@ -152,6 +155,19 @@ int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
     return 0;
 }
 
+void timespec_diff(struct timespec start, struct timespec end, struct timespec *diff)
+{
+    if((end.tv_nsec - start.tv_nsec) < 0)
+    {
+        diff->tv_sec = end.tv_sec - start.tv_sec - 1;
+        diff->tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+    }
+    else
+    {
+        diff->tv_sec = end.tv_sec - start.tv_sec;
+        diff->tv_nsec = end.tv_nsec - start.tv_nsec;
+    }
+}
 /*
  * Main
  */
@@ -159,7 +175,7 @@ int main(int argc, char **argv)
 {
     struct timespec start_time;
     struct timespec end_time;
-//    struct timespec overall_time;
+    struct timespec diff_time;
 
     options_t ops;
     task_t  *tasks;
@@ -169,16 +185,17 @@ int main(int argc, char **argv)
 
     printf("Hello World!\n");
 
+    // defaults
+    ops.num_tasks = 4;
+    ops.num_items = 10000;
+    ops.distribution = BLOCK;
+
     // get options
-    if( get_options(argc, argv, &oper, &ops.distribution, &input_deck, &ops.num_tasks) == -1)
+    if( get_options(argc, argv, &oper, &ops.distribution, &input_deck, &ops.num_tasks, &ops.num_items) == -1)
     {
         printf("Invalid agrument\n");
         return -1;
     }
-
-    // setup options
-    ops.distribution = BLOCK;
-    ops.num_items = 10000;
 
     //printf("asdf %lu %lu\n", sizeof(*ops.data), sizeof(ops.data));
 
@@ -211,8 +228,9 @@ int main(int argc, char **argv)
     // stop timer
     clock_gettime(CLOCK_MONOTONIC, &end_time);
 
+    timespec_diff(start_time, end_time, &diff_time);
     // report results
-    printf("Overall time: %i.%li\n", (int)(end_time.tv_sec - start_time.tv_sec), end_time.tv_nsec - start_time.tv_nsec);
+    printf("Overall time: %i.%li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
     // cleanup
     if(ops.data != NULL)
