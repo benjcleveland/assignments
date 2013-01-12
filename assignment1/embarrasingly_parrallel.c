@@ -14,10 +14,16 @@ typedef struct options
 {
     distribution_e distribution;
     int num_tasks;
-    int task_id;
     int num_items;
     int *data;
 }options_t;
+
+typedef struct task
+{   
+    int task_id;
+    pthread_t thread_id;
+    options_t *ops;
+}task_t;
 
 /*
  * Determine which portion of the array this task has to deal with
@@ -49,17 +55,18 @@ void computeMyCyclicPart(int numItems, int numTasks, int myTaskID, int *myLo, in
 void* negateThread(void *arg)
 {
     // cast arg
-    options_t *ops = (options_t *)arg;
+    task_t *task = (task_t *)arg;
+    options_t *ops = task->ops;
     int i;
     int my_lo, my_hi;
 
     // determine compute part
     if(ops->distribution == BLOCK)
-        computeMyBlockPart(ops->num_items, ops->num_tasks, ops->task_id, &my_lo, &my_hi); 
+        computeMyBlockPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
     else 
-        computeMyCyclicPart(ops->num_items, ops->num_tasks, ops->task_id, &my_lo, &my_hi); 
+        computeMyCyclicPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
 
-    printf("thread %d lo %d, hi %d\n", ops->task_id, my_lo, my_hi); 
+    printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
     // do the computation
     for(i = my_lo; i < my_hi; ++i)
         ops->data[i] = -ops->data[i];
@@ -90,10 +97,10 @@ int main(void)
     struct timespec end_time;
 //    struct timespec overall_time;
 
-    pthread_t thread_id;
     options_t ops;
+    task_t  *tasks;
+
     int i;
-    int num_tasks = 4;
 
     printf("Hello World!\n");
 
@@ -101,12 +108,13 @@ int main(void)
     ops.distribution = BLOCK;
     ops.num_items = 10000;
     ops.num_tasks = 4;
-    ops.task_id = 0;
 
-    printf("asdf %lu %lu\n", sizeof(*ops.data), sizeof(ops.data));
+    //printf("asdf %lu %lu\n", sizeof(*ops.data), sizeof(ops.data));
 
     // allocate memory for the data
     ops.data = calloc(ops.num_items, sizeof(*ops.data));
+
+    tasks = calloc(ops.num_tasks, sizeof(*tasks));
 
     // fill in data
     for(i = 0; i < ops.num_items; ++i)
@@ -118,11 +126,16 @@ int main(void)
     // create tasks
     for(i = 0; i < ops.num_tasks; ++i)
     {
-        pthread_create(&thread_id, NULL, negateThread, &ops);
+        tasks[i].task_id = i;
+        tasks[i].ops = &ops;
+        pthread_create(&tasks[i].thread_id, NULL, negateThread, &tasks[i]);
     }
 
     // join tasks - ignore the result for now
-    pthread_join(thread_id, NULL);
+    for(i = 0; i < ops.num_tasks; ++i)
+    {
+        pthread_join(tasks[i].thread_id, NULL);
+    }
 
     // stop timer
     clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -133,5 +146,8 @@ int main(void)
     // cleanup
     if(ops.data != NULL)
         free(ops.data);
+    if(tasks != NULL)
+        free(tasks);
+
 	return 0;
 }
