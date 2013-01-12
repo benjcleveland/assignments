@@ -1,6 +1,6 @@
 TARGET = embarrassed
 OBJECTS = embarrassed.o
-LIBS = -lpthread
+LIBS = -lpthread -lrt -lm
 CFLAGS = -Wall
 
 .PHONY: default all clean
@@ -14,7 +14,7 @@ $(OBJECTS): $(SOURCE)
 	gcc $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
-	gcc $(OBJECTS) -o $@
+	gcc $(OBJECTS) -Wall $(LIBS) -o $@
 
 clean:
 	-rm -f *.o
