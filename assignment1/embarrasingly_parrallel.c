@@ -61,6 +61,11 @@ void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int
 void computeMyCyclicPart(int numItems, int numTasks, int myTaskID, int *myLo, int *myHi)
 {
 
+    *myLo = myTaskID;
+    if(myTaskID < numItems % numTasks)
+        *myHi = ((numItems/numTasks)) * numTasks + myTaskID + 1;
+    else
+        *myHi = ((numItems/numTasks) - 1) * numTasks + myTaskID + 1;
 }
 
 /*
@@ -73,17 +78,25 @@ void* negateThread(void *arg)
     task_t *task = (task_t *)arg;
     options_t *ops = task->ops;
     int i;
+    int stride;
     int my_lo, my_hi;
 
     // determine compute part
     if(ops->distribution == BLOCK)
+    {
         computeMyBlockPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
+        stride = 1;
+    }
     else 
+    {
         computeMyCyclicPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
+        stride = ops->num_tasks;
+    }
 
-    //printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
+    printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
+
     // do the computation
-    for(i = my_lo; i < my_hi; ++i)
+    for(i = my_lo; i < my_hi; i += stride)
         ops->data[i] = -ops->data[i];
 
     // finish
