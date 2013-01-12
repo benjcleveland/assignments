@@ -3,12 +3,26 @@
 #include <pthread.h>
 #include <time.h>
 #include <math.h>
+#include <unistd.h>
+#include <string.h>
 
 typedef enum distribution
 {
     BLOCK,
-    CLYCLIC
+    CYCLIC
 }distribution_e;
+
+typedef enum operation
+{
+    FACTORIAL,
+    NEGATE
+}operation_e;
+
+typedef enum input_deck
+{
+    RANDOM,
+    VALUE_RAMP
+}input_deck_e;
 
 typedef struct options
 {
@@ -91,7 +105,57 @@ void* factorialThread(void *arg)
     return NULL;
 }
 
-int main(void)
+
+int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
+    input_deck_e *input_deck, int *num_tasks)
+{
+    int c;
+
+    while((c = getopt(argc, argv, "o:i:d:n:")) != -1)
+    {
+        switch(c)
+        {
+            case 'o': // operation
+                if(strcmp("factorial", optarg) == 0)
+                    *oper = FACTORIAL;
+                else if(strcmp("negate", optarg) == 0)
+                    *oper = NEGATE;
+                else
+                    return -1;
+            
+                break;
+            case 'd': // distribution
+                if(strcmp("block", optarg) == 0)
+                    *dist = BLOCK;
+                else if(strcmp("cyclic", optarg) == 0)
+                    *dist = CYCLIC;
+                else
+                    return -1;
+                break;
+            case 'i': // input deck
+                if(strcmp("random", optarg) == 0)
+                    *input_deck = RANDOM;
+                else if(strcmp("valueramp", optarg) == 0)
+                    *input_deck = VALUE_RAMP;
+                else
+                    return -1;
+                break;
+            case 'n': // number of tasks
+                // TODO this will crash if an integer is not passed
+                *num_tasks = atoi(optarg);
+                break;
+            default:
+                printf("error\n");
+                break;
+        }
+    }
+    return 0;
+}
+
+/*
+ * Main
+ */
+int main(int argc, char **argv)
 {
     struct timespec start_time;
     struct timespec end_time;
@@ -99,15 +163,22 @@ int main(void)
 
     options_t ops;
     task_t  *tasks;
-
+    operation_e oper;
+    input_deck_e input_deck;
     int i;
 
     printf("Hello World!\n");
 
+    // get options
+    if( get_options(argc, argv, &oper, &ops.distribution, &input_deck, &ops.num_tasks) == -1)
+    {
+        printf("Invalid agrument\n");
+        return -1;
+    }
+
     // setup options
     ops.distribution = BLOCK;
     ops.num_items = 10000;
-    ops.num_tasks = 4;
 
     //printf("asdf %lu %lu\n", sizeof(*ops.data), sizeof(ops.data));
 
