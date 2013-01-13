@@ -46,7 +46,7 @@ typedef struct task
 void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int *myHi)
 {
     // determine the number for each block
-    int items_per_block = ceil(numItems/numTasks);
+    int items_per_block = ceil((double)numItems/numTasks);
 
     // determine the high
     *myHi = myTaskID + 1 >= numTasks ? numItems : items_per_block * (myTaskID + 1); 
@@ -200,6 +200,7 @@ int main(int argc, char **argv)
     input_deck_e    input_deck;
     int             i;
     int             max_value = INT_MAX;
+    int             items_per_block;
 
     printf("Hello World!\n");
 
@@ -215,6 +216,11 @@ int main(int argc, char **argv)
         printf("Invalid agrument\n");
         return -1;
     }
+    if(max_value > ops.num_items && input_deck == VALUE_RAMP)
+    {
+        printf("Error, max value is larger than number of items, illegal for value ramp input deck...\n");
+        return -1;
+    }
 
     //printf("asdf %lu %lu\n", sizeof(*ops.data), sizeof(ops.data));
 
@@ -226,12 +232,21 @@ int main(int argc, char **argv)
     // seed the random number generator if needed
     if(input_deck == RANDOM)
         srand(time(NULL));
+    
+    if(input_deck == VALUE_RAMP)
+        items_per_block = ceil((double)ops.num_items/max_value);
 
     // fill in data
     for(i = 0; i < ops.num_items; ++i)
     {
         if(input_deck == RANDOM)
-            ops.data[i] = rand();
+            ops.data[i] = rand() % max_value;
+        else // value ramp 
+        {
+            // determine the number for each block
+            ops.data[i] = (i/items_per_block) + 1;
+        }
+            printf("data %d\n", ops.data[i]);
     }
     
     // start timer
@@ -269,6 +284,7 @@ int main(int argc, char **argv)
         printf("RANDOM\n");
     else if(input_deck == VALUE_RAMP)
         printf("VALUE_RAMP\n");
+    printf("Max Value: %d\n", max_value);
     printf("Operation: ");
     if(oper == FACTORIAL)
         printf("FACTORIAL\n");
