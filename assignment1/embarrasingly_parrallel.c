@@ -28,6 +28,7 @@ typedef enum input_deck
 typedef struct options
 {
     distribution_e distribution;
+    operation_e operation;
     int num_tasks;
     int num_items;
     int *data;
@@ -77,7 +78,7 @@ void* negateThread(void *arg)
     // cast arg
     task_t *task = (task_t *)arg;
     options_t *ops = task->ops;
-    int i;
+    int i, j;
     int stride;
     int my_lo, my_hi;
 
@@ -93,32 +94,28 @@ void* negateThread(void *arg)
         stride = ops->num_tasks;
     }
 
-    printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
+    //printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
 
-    // do the computation
-    for(i = my_lo; i < my_hi; i += stride)
-        ops->data[i] = -ops->data[i];
-
-    // finish
-    return NULL;
-}
-
-/*
- * Negate thread
- * 
- */
-void* factorialThread(void *arg)
-{
-    // cast arg
-
-    // determine compute part
-
-    // do the computation
+    if(ops->operation == NEGATE)
+    {
+        // do the computation
+        for(i = my_lo; i < my_hi; i += stride)
+            ops->data[i] = -ops->data[i];
+    }
+    else // compute factorial
+    {
+        int factorial;
+        for(i = my_lo; i < my_hi; i += stride)
+        {   factorial = 1;
+            for(j = 1; j <= ops->data[i]; ++j)
+                factorial *= j;
+            //printf("fact = %d\n", factorial);
+        }
+    }
 
     // finish
     return NULL;
 }
-
 
 int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
     input_deck_e *input_deck, int *num_tasks, int *num_items, int *max_value)
@@ -196,7 +193,6 @@ int main(int argc, char **argv)
 
     options_t       ops;
     task_t          *tasks;
-    operation_e     oper;
     input_deck_e    input_deck;
     int             i;
     int             max_value = INT_MAX;
@@ -208,10 +204,11 @@ int main(int argc, char **argv)
     ops.num_tasks = 4;
     ops.num_items = 10000;
     ops.distribution = BLOCK;
+    ops.operation = NEGATE;
     input_deck = RANDOM;
 
     // get options
-    if( get_options(argc, argv, &oper, &ops.distribution, &input_deck, &ops.num_tasks, &ops.num_items, &max_value) == -1)
+    if( get_options(argc, argv, &ops.operation, &ops.distribution, &input_deck, &ops.num_tasks, &ops.num_items, &max_value) == -1)
     {
         printf("Invalid agrument\n");
         return -1;
@@ -246,7 +243,7 @@ int main(int argc, char **argv)
             // determine the number for each block
             ops.data[i] = (i/items_per_block) + 1;
         }
-            printf("data %d\n", ops.data[i]);
+        //printf("data %d\n", ops.data[i]);
     }
     
     // start timer
@@ -286,9 +283,9 @@ int main(int argc, char **argv)
         printf("VALUE_RAMP\n");
     printf("Max Value: %d\n", max_value);
     printf("Operation: ");
-    if(oper == FACTORIAL)
+    if(ops.operation == FACTORIAL)
         printf("FACTORIAL\n");
-    else if(oper == NEGATE)
+    else if(ops.operation == NEGATE)
         printf("NEGATE\n");
 
     // report results
