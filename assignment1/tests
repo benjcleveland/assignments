@@ -1,58 +1,58 @@
 #!/usr/bin/bash
 
 echo "Test 1"
-./embarrassed -o negate -d block -i random -n 1 -e 150000000 
-./embarrassed -o negate -d block -i random -n 2 -e 150000000 
-./embarrassed -o negate -d block -i random -n 3 -e 150000000 
-./embarrassed -o negate -d block -i random -n 4 -e 150000000 
-./embarrassed -o negate -d block -i random -n 5 -e 150000000 
+./embarrassed -o negate -d block -i random -n 1 -e 200000000 
+./embarrassed -o negate -d block -i random -n 2 -e 200000000 
+./embarrassed -o negate -d block -i random -n 3 -e 200000000 
+./embarrassed -o negate -d block -i random -n 4 -e 200000000 
+./embarrassed -o negate -d block -i random -n 5 -e 200000000 
 
 echo "Test 2"
-./embarrassed -o negate -d cyclic -i random -n 1 -e 150000000 
-./embarrassed -o negate -d cyclic -i random -n 2 -e 150000000 
-./embarrassed -o negate -d cyclic -i random -n 3 -e 150000000 
-./embarrassed -o negate -d cyclic -i random -n 4 -e 150000000 
-./embarrassed -o negate -d cyclic -i random -n 5 -e 150000000 
+./embarrassed -o negate -d cyclic -i random -n 1 -e 200000000 
+./embarrassed -o negate -d cyclic -i random -n 2 -e 200000000 
+./embarrassed -o negate -d cyclic -i random -n 3 -e 200000000 
+./embarrassed -o negate -d cyclic -i random -n 4 -e 200000000 
+./embarrassed -o negate -d cyclic -i random -n 5 -e 200000000 
 
 echo "Test 3"
-./embarrassed -o negate -d block -i valueramp -n 1 -e 150000000 -m 100
-./embarrassed -o negate -d block -i valueramp -n 2 -e 150000000 -m 100 
-./embarrassed -o negate -d block -i valueramp -n 3 -e 150000000 -m 100 
-./embarrassed -o negate -d block -i valueramp -n 4 -e 150000000 -m 100 
-./embarrassed -o negate -d block -i valueramp -n 5 -e 150000000 -m 100 
+./embarrassed -o negate -d block -i valueramp -n 1 -e 200000000 -m 100
+./embarrassed -o negate -d block -i valueramp -n 2 -e 200000000 -m 100 
+./embarrassed -o negate -d block -i valueramp -n 3 -e 200000000 -m 100 
+./embarrassed -o negate -d block -i valueramp -n 4 -e 200000000 -m 100 
+./embarrassed -o negate -d block -i valueramp -n 5 -e 200000000 -m 100 
 
 echo "Test 4"
-./embarrassed -o negate -d cyclic -i valueramp -n 1 -e 150000000 -m 100 
-./embarrassed -o negate -d cyclic -i valueramp -n 2 -e 150000000 -m 100 
-./embarrassed -o negate -d cyclic -i valueramp -n 3 -e 150000000 -m 100 
-./embarrassed -o negate -d cyclic -i valueramp -n 4 -e 150000000 -m 100 
-./embarrassed -o negate -d cyclic -i valueramp -n 5 -e 150000000 -m 100 
+./embarrassed -o negate -d cyclic -i valueramp -n 1 -e 200000000 -m 100 
+./embarrassed -o negate -d cyclic -i valueramp -n 2 -e 200000000 -m 100 
+./embarrassed -o negate -d cyclic -i valueramp -n 3 -e 200000000 -m 100 
+./embarrassed -o negate -d cyclic -i valueramp -n 4 -e 200000000 -m 100 
+./embarrassed -o negate -d cyclic -i valueramp -n 5 -e 200000000 -m 100 
 
 
 echo "Test 5"
-./embarrassed -o factorial -d block -i random -n 1 -e 150000000 -m 16  
-./embarrassed -o factorial -d block -i random -n 2 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i random -n 3 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i random -n 4 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i random -n 5 -e 150000000 -m 16 
+./embarrassed -o factorial -d block -i random -n 1 -e 200000000 -m 16  
+./embarrassed -o factorial -d block -i random -n 2 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i random -n 3 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i random -n 4 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i random -n 5 -e 200000000 -m 16 
 
 echo "Test 6"
-./embarrassed -o factorial -d cyclic -i random -n 1 -e 150000000 -m 16 
-./embarrassed -o factorial -d cyclic -i random -n 2 -e 150000000 -m 16 
-./embarrassed -o factorial -d cyclic -i random -n 3 -e 150000000 -m 16 
-./embarrassed -o factorial -d cyclic -i random -n 4 -e 150000000 -m 16 
-./embarrassed -o factorial -d cyclic -i random -n 5 -e 150000000 -m 16 
+./embarrassed -o factorial -d cyclic -i random -n 1 -e 200000000 -m 16 
+./embarrassed -o factorial -d cyclic -i random -n 2 -e 200000000 -m 16 
+./embarrassed -o factorial -d cyclic -i random -n 3 -e 200000000 -m 16 
+./embarrassed -o factorial -d cyclic -i random -n 4 -e 200000000 -m 16 
+./embarrassed -o factorial -d cyclic -i random -n 5 -e 200000000 -m 16 
 
 echo "Test 7"
-./embarrassed -o factorial -d block -i valueramp -n 1 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i valueramp -n 2 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i valueramp -n 3 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i valueramp -n 4 -e 150000000 -m 16 
-./embarrassed -o factorial -d block -i valueramp -n 5 -e 150000000 -m 16 
+./embarrassed -o factorial -d block -i valueramp -n 1 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i valueramp -n 2 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i valueramp -n 3 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i valueramp -n 4 -e 200000000 -m 16 
+./embarrassed -o factorial -d block -i valueramp -n 5 -e 200000000 -m 16 
 
 echo "Test 8"
-./embarrassed -o factorial -d cyclic -i valueramp -n 1 -e 150000000 -m 16
-./embarrassed -o factorial -d cyclic -i valueramp -n 2 -e 150000000 -m 16
-./embarrassed -o factorial -d cyclic -i valueramp -n 3 -e 150000000 -m 16
-./embarrassed -o factorial -d cyclic -i valueramp -n 4 -e 150000000 -m 16
-./embarrassed -o factorial -d cyclic -i valueramp -n 5 -e 150000000 -m 16
+./embarrassed -o factorial -d cyclic -i valueramp -n 1 -e 200000000 -m 16
+./embarrassed -o factorial -d cyclic -i valueramp -n 2 -e 200000000 -m 16
+./embarrassed -o factorial -d cyclic -i valueramp -n 3 -e 200000000 -m 16
+./embarrassed -o factorial -d cyclic -i valueramp -n 4 -e 200000000 -m 16
+./embarrassed -o factorial -d cyclic -i valueramp -n 5 -e 200000000 -m 16

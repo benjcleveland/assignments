@@ -1,16 +1,17 @@
 TARGET = embarrassed
-OBJECTS = embarrassed.o
+OBJECTS = $(SOURCE:.c=.o)
 LIBS = -lpthread -lrt -lm
 CFLAGS = -Wall
 
 .PHONY: default all clean
-
-SOURCE  = embarrasingly_parrallel.c
+HEADERS = work_distribution.h
+SOURCE  = embarrasingly_parrallel.c \
+	work_distribution.c
 
 default: $(TARGET) 
 all: default
 
-$(OBJECTS): $(SOURCE) 
+%.o: %.c 
 	gcc $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
