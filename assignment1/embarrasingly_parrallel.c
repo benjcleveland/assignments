@@ -109,7 +109,7 @@ void* negateThread(void *arg)
         {   factorial = 1;
             for(j = 1; j <= ops->data[i]; ++j)
                 factorial *= j;
-            //printf("fact = %d\n", factorial);
+            ops->data[i] = factorial;
         }
     }
 
@@ -198,8 +198,6 @@ int main(int argc, char **argv)
     int             max_value = INT_MAX;
     int             items_per_block;
 
-    printf("Hello World!\n");
-
     // defaults
     ops.num_tasks = 4;
     ops.num_items = 10000;
@@ -223,8 +221,18 @@ int main(int argc, char **argv)
 
     // allocate memory for the data
     ops.data = calloc(ops.num_items, sizeof(*ops.data));
+    if(ops.data == NULL)
+    {
+        perror("Error allocating memory for data!\n");
+        return -1;
+    }
 
     tasks = calloc(ops.num_tasks, sizeof(*tasks));
+    if(tasks == NULL)
+    {
+        perror("Error allocating memory for tasks!\n");
+        return -1;
+    }
 
     // seed the random number generator if needed
     if(input_deck == RANDOM)
@@ -260,7 +268,8 @@ int main(int argc, char **argv)
     // join tasks - ignore the result for now
     for(i = 0; i < ops.num_tasks; ++i)
     {
-        pthread_join(tasks[i].thread_id, NULL);
+        if( pthread_join(tasks[i].thread_id, NULL) != 0)
+            perror("Error returned from pthread_join!\n");
     }
 
     // stop timer
@@ -269,7 +278,7 @@ int main(int argc, char **argv)
     timespec_diff(start_time, end_time, &diff_time);
 
     // print the input values
-    printf("Number of tasks: %d\n", ops.num_tasks);
+/*    printf("Number of tasks: %d\n", ops.num_tasks);
     printf("Number of items: %d\n", ops.num_items);
     printf("Distribution: ");
     if(ops.distribution == BLOCK)
@@ -287,7 +296,7 @@ int main(int argc, char **argv)
         printf("FACTORIAL\n");
     else if(ops.operation == NEGATE)
         printf("NEGATE\n");
-
+*/
     // report results
     printf("%i %i Overall time: %i.%09li\n", (int)start_time.tv_sec, (int)end_time.tv_sec, (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
