@@ -1,3 +1,10 @@
+/*
+ * Ben Cleveland
+ * CSE 524
+ * Assignment 1 - Embarrasingly Parallel Performance Study
+ *
+ */
+
 #include "work_distribution.h"
 
 #include <stdlib.h>
@@ -9,52 +16,57 @@
 #include <string.h>
 #include <limits.h>
 
+// distribution types
 typedef enum distribution
 {
     BLOCK,
     CYCLIC
 }distribution_e;
 
+// operation types
 typedef enum operation
 {
     FACTORIAL,
     NEGATE
 }operation_e;
 
+// input decks
 typedef enum input_deck
 {
     RANDOM,
     VALUE_RAMP
 }input_deck_e;
 
+// options set for the current run
 typedef struct options
 {
-    distribution_e distribution;
-    operation_e operation;
-    int num_tasks;
-    int num_items;
-    int *data;
+    distribution_e  distribution;
+    operation_e     operation;
+    int             num_tasks;
+    int             num_items;
+    int             *data;
 }options_t;
 
+// structure for given to each task
 typedef struct task
 {   
-    int task_id;
-    pthread_t thread_id;
-    options_t *ops;
+    int         task_id;
+    pthread_t   thread_id;
+    options_t   *ops;
 }task_t;
 
 /*
  * Negate thread
  * 
  */
-void* negateThread(void *arg)
+void* computeThread(void *arg)
 {
     // cast arg
-    task_t *task = (task_t *)arg;
-    options_t *ops = task->ops;
-    int i, j;
-    int stride;
-    int my_lo, my_hi;
+    task_t      *task = (task_t *)arg;
+    options_t   *ops = task->ops;
+    int         i, j;
+    int         stride;
+    int         my_lo, my_hi;
 
     // determine compute part
     if(ops->distribution == BLOCK)
@@ -72,7 +84,7 @@ void* negateThread(void *arg)
 
     if(ops->operation == NEGATE)
     {
-        // do the computation
+        // do the Negate computation
         for(i = my_lo; i < my_hi; i += stride)
             ops->data[i] = -ops->data[i];
     }
@@ -91,6 +103,9 @@ void* negateThread(void *arg)
     return NULL;
 }
 
+/*
+ * Handle command line options
+ */
 int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
     input_deck_e *input_deck, int *num_tasks, int *num_items, int *max_value)
 {
@@ -126,14 +141,13 @@ int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
                     return -1;
                 break;
             case 'n': // number of tasks
-                // TODO this will crash if an integer is not passed
-                *num_tasks = atoi(optarg);
+                *num_tasks = strtol(optarg, NULL, 10);
                 break;
             case 'e': // number of elements
-                *num_items = atoi(optarg);
+                *num_items = strtol(optarg, NULL, 10);
                 break;
             case 'm': // the max value in the input deck
-                *max_value = atoi(optarg);
+                *max_value = strtol(optarg, NULL, 10);
                 break;
             default:
                 printf("error\n");
@@ -143,6 +157,11 @@ int get_options(int argc, char **argv, operation_e *oper, distribution_e *dist,
     return 0;
 }
 
+/*
+ * Calculate the difference betweeen two timespec structures
+ *
+ * Stores the result in diff
+ */
 void timespec_diff(struct timespec start, struct timespec end, struct timespec *diff)
 {
     if((end.tv_nsec - start.tv_nsec) < 0)
@@ -156,6 +175,7 @@ void timespec_diff(struct timespec start, struct timespec end, struct timespec *
         diff->tv_nsec = end.tv_nsec - start.tv_nsec;
     }
 }
+
 /*
  * Main
  */
@@ -170,7 +190,7 @@ int main(int argc, char **argv)
     input_deck_e    input_deck;
     int             i;
     int             max_value = INT_MAX;
-    int             items_per_block;
+    int             step_size;
 
     // defaults
     ops.num_tasks = 4;
@@ -185,6 +205,7 @@ int main(int argc, char **argv)
         printf("Invalid agrument\n");
         return -1;
     }
+
     if(max_value > ops.num_items && input_deck == VALUE_RAMP)
     {
         printf("Error, max value is larger than number of items, illegal for value ramp input deck...\n");
@@ -212,31 +233,34 @@ int main(int argc, char **argv)
     if(input_deck == RANDOM)
         srand(time(NULL));
     
+    // determine the 'step size' for the value ramp
     if(input_deck == VALUE_RAMP)
-        items_per_block = ceil((double)ops.num_items/max_value);
+        step_size = ceil((double)ops.num_items/max_value);
 
     // fill in data
     for(i = 0; i < ops.num_items; ++i)
     {
-        if(input_deck == RANDOM)
+        if(input_deck == RANDOM) // limit the random value to the max value passed in
             ops.data[i] = rand() % max_value;
         else // value ramp 
         {
-            // determine the number for each block
-            ops.data[i] = (i/items_per_block) + 1;
+            // determine the data value based on the step size
+            ops.data[i] = (i/step_size) + 1;
         }
         //printf("data %d\n", ops.data[i]);
     }
     
     // start timer
-    clock_gettime(CLOCK_MONOTONIC, &start_time); 
+    if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
+        perror("Error from clock_gettime - getting start time!\n");
 
     // create tasks
     for(i = 0; i < ops.num_tasks; ++i)
     {
         tasks[i].task_id = i;
         tasks[i].ops = &ops;
-        pthread_create(&tasks[i].thread_id, NULL, negateThread, &tasks[i]);
+        if(pthread_create(&tasks[i].thread_id, NULL, computeThread, &tasks[i]) != 0)
+            perror("Error creating task!\n");
     }
 
     // join tasks - ignore the result for now
@@ -247,7 +271,8 @@ int main(int argc, char **argv)
     }
 
     // stop timer
-    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
+        perror("Error from clock_gettime - getting end time!\n");
 
     timespec_diff(start_time, end_time, &diff_time);
 
@@ -272,11 +297,12 @@ int main(int argc, char **argv)
         printf("NEGATE\n");
 */
     // report results
-    printf("%i %i Overall time: %i.%09li\n", (int)start_time.tv_sec, (int)end_time.tv_sec, (int)(diff_time.tv_sec), diff_time.tv_nsec);
+    printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
-    // cleanup
+    // cleanup memory
     if(ops.data != NULL)
         free(ops.data);
+
     if(tasks != NULL)
         free(tasks);
 
