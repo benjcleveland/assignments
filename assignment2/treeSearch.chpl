@@ -126,16 +126,16 @@ proc BlindTreeSearch(root: TreeNode, findme) {
       var numTasks: int;
       numTasks = here.runningTasks();
       //writeln("numtasks: ", numTasks);
-        if( numTasks < maxTasks && node.right != nil) {
-            begin SearchNode(node.right, path+"R");
-        } else {
-            SearchNode(node.right, path+"r");
-        }
-        if( numTasks+1 < maxTasks && node.left != nil) {
-            begin SearchNode(node.left, path+"L");
-        } else {
-            SearchNode(node.left,  path+"l");
-        }
+      if( numTasks < maxTasks && node.right != nil) {
+          begin SearchNode(node.right, path+"R");
+      } else {
+          SearchNode(node.right, path+"r");
+      }
+      if( numTasks+1 < maxTasks && node.left != nil) {
+          begin SearchNode(node.left, path+"L");
+      } else {
+          SearchNode(node.left,  path+"l");
+      }
     }
   }
 }

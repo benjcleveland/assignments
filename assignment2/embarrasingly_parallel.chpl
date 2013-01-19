@@ -70,7 +70,7 @@ proc main()
     // fill the in the item array
     var step_size = ceil((numElements : real)/maxValue) : int;
     for i in 1..numElements {
-        items[i] = ((i-1)/step_size) + 1;
+        items[i] = (((i-1)/step_size) + 1);
     }
 
     // start timer

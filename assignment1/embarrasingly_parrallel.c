@@ -44,7 +44,7 @@ typedef struct options
     operation_e     operation;
     int             num_tasks;
     int             num_items;
-    int             *data;
+    int64_t         *data;
 }options_t;
 
 // structure for given to each task
@@ -64,7 +64,7 @@ void* computeThread(void *arg)
     // cast arg
     task_t      *task = (task_t *)arg;
     options_t   *ops = task->ops;
-    int         i, j;
+    int64_t         i, j;
     int         stride;
     int         my_lo, my_hi;
 
@@ -90,7 +90,7 @@ void* computeThread(void *arg)
     }
     else // compute factorial
     {
-        int factorial;
+        int64_t factorial;
         for(i = my_lo; i < my_hi; i += stride)
         {   factorial = 1;
             for(j = 1; j <= ops->data[i]; ++j)
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
     input_deck_e    input_deck;
     int             i;
     int             max_value = INT_MAX;
-    int             step_size;
+    int             step_size = 1;
 
     // defaults
     ops.num_tasks = 4;
