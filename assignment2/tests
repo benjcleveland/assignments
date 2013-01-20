@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+echo "Test 1 Factorial-Block-Valueramp"
+./emb --maxTasks=1 --numElements=200000000 --maxValue 16
+./emb --maxTasks=2 --numElements=200000000 --maxValue 16
+./emb --maxTasks=3 --numElements=200000000 --maxValue 16
+./emb --maxTasks=4 --numElements=200000000 --maxValue 16
+./emb --maxTasks=5 --numElements=200000000 --maxValue 16
+
+echo "Test 2 Factorial-Cyclic-Valueramp"
+./emb --maxTasks=1 --numElements=200000000 --distribution=true --maxValue 16
+./emb --maxTasks=2 --numElements=200000000 --distribution=true --maxValue 16
+./emb --maxTasks=3 --numElements=200000000 --distribution=true --maxValue 16
+./emb --maxTasks=4 --numElements=200000000 --distribution=true --maxValue 16
+./emb --maxTasks=5 --numElements=200000000 --distribution=true --maxValue 16
+
