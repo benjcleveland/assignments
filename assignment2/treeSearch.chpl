@@ -110,7 +110,6 @@ proc BlindTreeSearch(root: TreeNode, findme) {
     //
     if (node == nil || pathToSolution != '')
      {
-         //writeln("leaf!");
          return;
      }
 
@@ -125,13 +124,12 @@ proc BlindTreeSearch(root: TreeNode, findme) {
       //
       var numTasks: int;
       numTasks = here.runningTasks();
-      //writeln("numtasks: ", numTasks);
-      if( numTasks < maxTasks && node.right != nil) {
+      if( numTasks < maxTasks ) {
           begin SearchNode(node.right, path+"R");
       } else {
           SearchNode(node.right, path+"r");
       }
-      if( numTasks+1 < maxTasks && node.left != nil) {
+      if( numTasks+1 < maxTasks ) {
           begin SearchNode(node.left, path+"L");
       } else {
           SearchNode(node.left,  path+"l");
