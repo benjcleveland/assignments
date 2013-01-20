@@ -76,7 +76,7 @@ proc BlindTreeSearch(root: TreeNode, findme) {
   // This will store the path to the solution once we find it
   //
   var pathToSolution: string;
-//    pathToSolution = '';
+  pathToSolution = '';
   //
   // check the starting time
   //
