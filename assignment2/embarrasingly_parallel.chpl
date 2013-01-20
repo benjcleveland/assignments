@@ -1,17 +1,19 @@
 use Time;
 
+// configuration variables
 config const numElements = 100;
 config const maxTasks = here.numCores;
 config const maxValue = 16;
 config const distribution = 0;
 
+// calculate the block distribution
 proc computeMyBlockPart(items:range, numTasks:int, myTask:int) : range
 {
     // determine the number for each block
-    var items_per_block = ceil((items.length : real)/numTasks) : int;
+    const items_per_block = ceil((items.length : real)/numTasks) : int;
 
     // compute the low
-    var lo = items_per_block * myTask + 1;
+    const lo = items_per_block * myTask + 1;
 
     // compute the high
     var hi : int;
@@ -24,6 +26,7 @@ proc computeMyBlockPart(items:range, numTasks:int, myTask:int) : range
     return lo..hi;
 }
 
+// calculate the cyclic distribution
 proc computeMyCyclicPart(items:range, numTasks:int, 
     myTask:int) : range(stridable=true) {
 
@@ -31,6 +34,7 @@ proc computeMyCyclicPart(items:range, numTasks:int,
 
 }
 
+// Compute all the factorials
 proc factorialTask(items, itemRange, numTasks, myTask, distribution)
 {
     // compute the distribution
@@ -43,21 +47,13 @@ proc factorialTask(items, itemRange, numTasks, myTask, distribution)
     else {
         item_range = computeMyCyclicPart(itemRange, numTasks, myTask);
     }
-/*
-    writeln("item range: ", item_range);
 
-    for i in item_range {
-        write(i, ",");
-    }
-    writeln("");
-*/
     // compute the factorial
     for i in item_range {
         factorial = 1;
         for j in 1..items[i] {
             factorial *= j;    
         }
-        //writeln(items[i], factorial);
         items[i] = factorial;
     }
 }
@@ -67,8 +63,23 @@ proc main()
 {
     var items: [1..numElements] int;
 
+    if(maxValue == 0) {
+        writeln("Error invalid value for maxValue, exiting...");
+        return;
+    }
+
+    if(maxTasks > numElements) {
+        writeln("Error more tasks than elements, exiting...");
+        return;
+    }
+
     // fill the in the item array
-    var step_size = ceil((numElements : real)/maxValue) : int;
+    const step_size = ceil((numElements : real)/maxValue) : int;
+    if( step_size == 0 ) {
+        writeln("Error invalid step_size, exiting...");
+        return;
+    }
+
     for i in 1..numElements {
         items[i] = (((i-1)/step_size) + 1);
     }
