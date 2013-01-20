@@ -1,38 +1,11 @@
 use Time;
+use distributionCompute;
 
 // configuration variables
 config const numElements = 100;
 config const maxTasks = here.numCores;
 config const maxValue = 16;
-config const distribution = 0;
-
-// calculate the block distribution
-proc computeMyBlockPart(items:range, numTasks:int, myTask:int) : range
-{
-    // determine the number for each block
-    const items_per_block = ceil((items.length : real)/numTasks) : int;
-
-    // compute the low
-    const lo = items_per_block * myTask + 1;
-
-    // compute the high
-    var hi : int;
-    if((myTask + 1) >= numTasks) {
-        hi = items.high;
-    } else {
-        hi = items_per_block * (myTask + 1);
-    }
-
-    return lo..hi;
-}
-
-// calculate the cyclic distribution
-proc computeMyCyclicPart(items:range, numTasks:int, 
-    myTask:int) : range(stridable=true) {
-
-    return items.low..items.high by numTasks align (myTask + 1);
-
-}
+config const distribution = false : bool;
 
 // Compute all the factorials
 proc factorialTask(items, itemRange, numTasks, myTask, distribution)
@@ -41,7 +14,7 @@ proc factorialTask(items, itemRange, numTasks, myTask, distribution)
     var item_range : range(stridable=true);
     var factorial : int;
 
-    if(distribution == 0) {
+    if(distribution == false) {
         item_range = computeMyBlockPart(itemRange, numTasks, myTask);
     }
     else {
