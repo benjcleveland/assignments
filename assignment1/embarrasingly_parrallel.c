@@ -92,7 +92,8 @@ void* computeThread(void *arg)
     {
         int64_t factorial;
         for(i = my_lo; i < my_hi; i += stride)
-        {   factorial = 1;
+        {   
+            factorial = 1;
             for(j = 1; j <= ops->data[i]; ++j)
                 factorial *= j;
             ops->data[i] = factorial;
@@ -299,6 +300,8 @@ int main(int argc, char **argv)
     // report results
     printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
+    for(i = 0; i < ops.num_items; ++i)
+        printf("%li", ops.data[i]);
     // cleanup memory
     if(ops.data != NULL)
         free(ops.data);

@@ -1,3 +1,9 @@
+/*
+ Ben Cleveland
+ CSE P 524
+ Assignment 2
+*/
+
 module distributionCompute {
     // calculate the block distribution
     proc computeMyBlockPart(items:range, numTasks:int, myTask:int) : range

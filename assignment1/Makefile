@@ -1,7 +1,7 @@
 TARGET = embarrassed
 OBJECTS = $(SOURCE:.c=.o)
 LIBS = -lpthread -lrt -lm
-CFLAGS = -Wall -m64
+CFLAGS = -Wall -O2
 
 .PHONY: default all clean
 HEADERS = work_distribution.h

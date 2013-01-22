@@ -1,3 +1,9 @@
+/*
+ Ben Cleveland
+ CSE P 524
+ Assignment 2
+*/
+
 use Time;
 use distributionCompute;
 

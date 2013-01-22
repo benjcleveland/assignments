@@ -1,3 +1,9 @@
+/*
+ Ben Cleveland
+ CSE P 524
+ Assignment 2
+*/
+
 use Random, Time;  // use standard Random number generation and Timing modules
 
 
