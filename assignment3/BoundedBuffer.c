@@ -45,6 +45,7 @@ void produce( BoundedBuffer * b, double item ) {
 
   pthread_mutex_unlock(&b->head_m);
 
+    // wake up any consumers
   pthread_mutex_lock(&b->tail_m);
   pthread_cond_signal(&b->nonempty);
   pthread_mutex_unlock(&b->tail_m);
@@ -62,10 +63,12 @@ double consume( BoundedBuffer * b ) {
     //pthread_mutex_unlock(&b->mutex);
 
     ret = b->buffer[b->tail];
-    b->tail = (b->tail +1) %b->capacity;
+    b->tail = (b->tail + 1) %b->capacity;
 
+    // todo move this before the read?
     pthread_mutex_unlock(&b->tail_m);
 
+    // wake up any producers
     pthread_mutex_lock(&b->head_m);
     pthread_cond_signal(&b->nonfull);
     pthread_mutex_unlock(&b->head_m);
