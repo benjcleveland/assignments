@@ -23,17 +23,17 @@ class BoundedBuffer {
     proc produce( item:real ) : void {
         /* IMPLEMENT */
         var myhead = head$;
-        writeln("writing", myhead);
-        buff$[myhead] = item;
+        //writeln("writing", myhead);
         head$ = (myhead + 1) % cap ;
+        buff$[myhead] = item;
     }
 
     proc consume( ) : real{
         /* IMPLEMENT */
         var mytail = tail$;
-        writeln("reading'",mytail);
-        var ret = buff$[mytail];
+        //writeln("reading'",mytail);
         tail$ =  (mytail + 1) % cap;
+        var ret = buff$[mytail];
         return ret;
     }
 }
@@ -48,7 +48,7 @@ proc consumer(b: BoundedBuffer, id: int) {
     do {
         const data = b.consume();
         count += 1;
-        writeln(id, " consuming ", data);
+        //writeln(id, " consuming ", data);
     } while (data!=TERM);
 
     return count-1;
