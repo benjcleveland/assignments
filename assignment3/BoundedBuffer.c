@@ -33,40 +33,43 @@ void produce( BoundedBuffer * b, double item ) {
   /* IMPLEMENT */
 
   pthread_mutex_lock(&b->head_m);
-  pthread_mutex_lock(&b->mutex);
+  //pthread_mutex_lock(&b->mutex);
   while(((b->head + 1) % b->capacity) == b->tail) 
-      pthread_cond_wait(&b->nonfull, &b->mutex);
+      pthread_cond_wait(&b->nonfull, &b->head_m);
 
-  pthread_mutex_unlock(&b->mutex);
+  //pthread_mutex_unlock(&b->mutex);
 
   // add the item to the buffer
   b->buffer[b->head] = item;
   b->head = (b->head + 1) % b->capacity;
 
-  pthread_mutex_lock(&b->mutex);
-  pthread_cond_signal(&b->nonempty);
-  pthread_mutex_unlock(&b->mutex);
-
   pthread_mutex_unlock(&b->head_m);
+
+  pthread_mutex_lock(&b->tail_m);
+  pthread_cond_signal(&b->nonempty);
+  pthread_mutex_unlock(&b->tail_m);
+
 }
 
 double consume( BoundedBuffer * b ) {
   /* IMPLEMENT */
     double ret;
     pthread_mutex_lock(&b->tail_m);
-    pthread_mutex_lock(&b->mutex);
+
+    //pthread_mutex_lock(&b->mutex);
     while(b->head == b->tail) 
-        pthread_cond_wait(&b->nonempty, &b->mutex);
-    pthread_mutex_unlock(&b->mutex);
+        pthread_cond_wait(&b->nonempty, &b->tail_m);
+    //pthread_mutex_unlock(&b->mutex);
 
     ret = b->buffer[b->tail];
     b->tail = (b->tail +1) %b->capacity;
 
-    pthread_mutex_lock(&b->mutex);
-    pthread_cond_signal(&b->nonfull);
-    pthread_mutex_unlock(&b->mutex);
-
     pthread_mutex_unlock(&b->tail_m);
+
+    pthread_mutex_lock(&b->head_m);
+    pthread_cond_signal(&b->nonfull);
+    pthread_mutex_unlock(&b->head_m);
+
     return ret;
 }
 
@@ -78,7 +81,7 @@ void * producer( void * arg ) {
   // produces 0..#N by P align id
   uint64_t count = 0;
   for ( uint64_t j=id; j<N; j+=P ) {
-      printf("%d producing %li\n", id, j);
+      //printf("%d producing %li\n", id, j);
     produce( &the_buffer, j );
     count++;
   }
@@ -94,7 +97,7 @@ void * consumer( void * ignore ) {
   do {
     data = consume( &the_buffer );
     count++;
-    printf("consuming %d\n", data);
+    //printf("consuming %f\n", data);
   } while (data != TERM);
 
   return (void*)(count-1);
