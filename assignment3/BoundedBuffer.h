@@ -1,20 +1,30 @@
 #include <stdint.h>
 #include <pthread.h>
 
+typedef struct buffer_s {
+    double          value;
+    int             status;
+    pthread_mutex_t lock;
+    pthread_cond_t  full;
+    pthread_cond_t  empty;
+} Buffer_t;
+
 typedef struct BoundedBuffer {
   
   /* FILL IN */
-  double *buffer;
   uint64_t capacity;
-  pthread_mutex_t mutex;
+  Buffer_t *buffer;
+  
   pthread_mutex_t tail_m;
   pthread_mutex_t head_m;
+
   pthread_cond_t nonfull;
   pthread_cond_t nonempty;
+
   uint64_t head;
   uint64_t tail;
-} BoundedBuffer;
 
+} BoundedBuffer;
 
 // Initialize buffer to be empty and
 // have the given capacity
