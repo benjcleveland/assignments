@@ -1,3 +1,5 @@
+use Time;
+
 config const capacity = 4;
 config const P = 2;
 config const C = 2;
@@ -59,7 +61,7 @@ proc producer(b: BoundedBuffer, id: int) {
     // produce my strided share of N elements
     var count = 0;
     for i in 0..#N by P align id {
-        writeln(id, " producing ", i);
+        //writeln(id, " producing ", i);
         b.produce(i);
         count += 1;
     }
@@ -75,6 +77,7 @@ proc signalExit(b: BoundedBuffer) {
 var P_count: [0..#P] int;
 var C_count: [0..#C] int;
 var theBuffer = new BoundedBuffer();
+const start_time = getCurrentTime();
 cobegin {
     sync {
         begin {
@@ -92,8 +95,12 @@ cobegin {
     coforall consID in 0..#C do
         C_count[consID] = consumer(theBuffer, consID);
 }    
+
+const elapsed_time = getCurrentTime() - start_time;
+
 writeln("P_count=", P_count);
 writeln("C_count=", C_count);
+
 // print totals
 var total_c = 0;
 for i in 0..#C do
@@ -105,3 +112,4 @@ for i in 0..#P do
     total_c += P_count[i];
 writeln("total producer=", total_c);
 
+writeln("Total time= ", elapsed_time);

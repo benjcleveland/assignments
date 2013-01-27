@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+
+echo "1 Consumer 4 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=1 --P=4 --capacity=2
+echo "2 Consumer 3 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=2 --P=3 --capacity=2
+echo "3 Consumer 2 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=3 --P=2 --capacity=2
+echo "4 Consumer 1 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=4 --P=1 --capacity=2
+echo "2 Consumer 2 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=2 --P=2 --capacity=2
+echo "1 Consumer 4 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=1 --P=4 --capacity=10
+echo "2 Consumer 3 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=2 --P=3 --capacity=10
+echo "3 Consumer 2 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=3 --P=2 --capacity=10
+echo "4 Consumer 1 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=4 --P=1 --capacity=10
+echo "2 Consumer 2 Producer"
+./BoundedBuffer_chapel --N=5000000 --C=2 --P=2 --capacity=10

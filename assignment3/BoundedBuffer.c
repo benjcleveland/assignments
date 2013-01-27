@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "BoundedBuffer.h"
 
 /* config */ uint64_t P = 2;
@@ -29,25 +30,40 @@ void initBoundedBuffer( BoundedBuffer * b, uint64_t capacity ) {
     b->tail = 0;
 }
 
+int check(int head, int tail, int cap) {
+    if( head - tail > cap)
+        return 0;
+    if(head< tail)
+        return 0;
+    return 1; 
+}
+
 void produce( BoundedBuffer * b, double item ) {
   /* IMPLEMENT */
 
   pthread_mutex_lock(&b->head_m);
+  assert(check(b->head, b->tail, b->capacity));
   //pthread_mutex_lock(&b->mutex);
-  while(((b->head + 1) % b->capacity) == b->tail) 
+  while(((b->head + 1) % b->capacity) == b->tail %b->capacity) 
+  {
+  assert(check(b->head, b->tail, b->capacity));
       pthread_cond_wait(&b->nonfull, &b->head_m);
-
+  assert(check(b->head, b->tail, b->capacity));
+    }
   //pthread_mutex_unlock(&b->mutex);
 
   // add the item to the buffer
-  b->buffer[b->head] = item;
-  b->head = (b->head + 1) % b->capacity;
+  b->buffer[b->head%b->capacity] = item;
+  b->head = (b->head + 1);// % b->capacity;
 
+  assert(check(b->head, b->tail, b->capacity));
   pthread_mutex_unlock(&b->head_m);
 
     // wake up any consumers
   pthread_mutex_lock(&b->tail_m);
+  assert(check(b->head, b->tail, b->capacity));
   pthread_cond_signal(&b->nonempty);
+  assert(check(b->head, b->tail, b->capacity));
   pthread_mutex_unlock(&b->tail_m);
 
 }
@@ -56,21 +72,29 @@ double consume( BoundedBuffer * b ) {
   /* IMPLEMENT */
     double ret;
     pthread_mutex_lock(&b->tail_m);
+  assert(check(b->head, b->tail, b->capacity));
 
     //pthread_mutex_lock(&b->mutex);
     while(b->head == b->tail) 
+    {
+  assert(check(b->head, b->tail, b->capacity));
         pthread_cond_wait(&b->nonempty, &b->tail_m);
     //pthread_mutex_unlock(&b->mutex);
+  assert(check(b->head, b->tail, b->capacity));
+      }
 
-    ret = b->buffer[b->tail];
-    b->tail = (b->tail + 1) %b->capacity;
+    ret = b->buffer[b->tail%b->capacity];
+    b->tail = (b->tail + 1);// %b->capacity;
 
+  assert(check(b->head, b->tail, b->capacity));
     // todo move this before the read?
     pthread_mutex_unlock(&b->tail_m);
 
     // wake up any producers
     pthread_mutex_lock(&b->head_m);
+  assert(check(b->head, b->tail, b->capacity));
     pthread_cond_signal(&b->nonfull);
+  assert(check(b->head, b->tail, b->capacity));
     pthread_mutex_unlock(&b->head_m);
 
     return ret;
