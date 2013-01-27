@@ -25,23 +25,7 @@ class Distribute {
         decay$ = 0;
     }
 
-    proc dynamicDistribution(items:range, taskId, numTasks, iteration) : range {
-        /*
-           var mystart = start$;
-           var myend = mystart + size;
-
-           if(myend > items.size) {
-            myend = items.size;
-           }
-           start$ = myend + 1;
-
-           var mysize = size$;
-           writeln("size = ", size$);
-           size$ = mysize/2;
-           start$ = myend + 1;    
-           end$ = size$ + myend;
-
-         */
+    proc dynamicDistribution(items:range, numTasks) : range {
 
         var mysize = size$;
         // see if we need to update the size
@@ -85,7 +69,7 @@ proc factorialTask(items, itemRange, numTasks, myTask, distribution) {
     const start_time = getCurrentTime();
 
     do {
-        item_range = distribution.dynamicDistribution(itemRange, myTask, numTasks, iteration);
+        item_range = distribution.dynamicDistribution(itemRange, numTasks);
         // compute the factorial
         for i in item_range {
             factorial = 1;
