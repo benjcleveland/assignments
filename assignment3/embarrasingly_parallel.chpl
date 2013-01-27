@@ -147,7 +147,7 @@ proc main()
 
     for i in 0..#maxTasks {
         const (iterations, time, count) = return_info[i];
-        writeln(i, " Num Iterations: ", iterations, " Time: ", time, " Count: ", count);
+        writeln("Task: ", i, " Num Iterations: ", iterations, " Time: ", time, " Count: ", count);
         total_count += count;
     }
 
