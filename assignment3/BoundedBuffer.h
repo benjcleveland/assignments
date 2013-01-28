@@ -1,3 +1,9 @@
+/*
+ * Ben Cleveland
+ * CSE P 524
+ * Assignment 3
+ */
+
 #include <stdint.h>
 #include <pthread.h>
 

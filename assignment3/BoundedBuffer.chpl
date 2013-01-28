@@ -1,3 +1,9 @@
+/*
+  Ben Cleveland
+  CSE P 524
+  Assignment 3
+*/
+
 use Time;
 
 config const capacity = 4;
@@ -30,13 +36,12 @@ class BoundedBuffer {
         buff$[myhead] = item;
     }
 
-    proc consume( ) : real{
+    proc consume( ) : real {
         /* IMPLEMENT */
         var mytail = tail$;
         //writeln("reading'",mytail);
         tail$ =  (mytail + 1) % cap;
-        var ret = buff$[mytail];
-        return ret;
+        return buff$[mytail];
     }
 }
 
@@ -50,7 +55,6 @@ proc consumer(b: BoundedBuffer, id: int) {
     do {
         const data = b.consume();
         count += 1;
-        //writeln(id, " consuming ", data);
     } while (data!=TERM);
 
     return count-1;

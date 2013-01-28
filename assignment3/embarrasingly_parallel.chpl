@@ -1,7 +1,7 @@
 /*
  Ben Cleveland
  CSE P 524
- Assignment 2
+ Assignment 3
 */
 
 use Time;
@@ -15,30 +15,28 @@ config const maxValue = 16;
 class Distribute {
     var start$ : sync int;
     var size$ : sync int;
-    var decay$ : int;
+    var decay : int;
     var size : int;
 
     proc Distribute() {
         // initialize variables
         start$ = 1;
         size$ = (numElements/maxTasks)/2;
-        decay$ = 0;
+        decay = 0;
     }
 
     proc dynamicDistribution(items:range, numTasks) : range {
 
         var mysize = size$;
         // see if we need to update the size
-        var mydecay = decay$;
-        mydecay += 1;
-        if(mydecay >= numTasks) {
-            decay$ = 0;
+        decay += 1;
+        if(decay >= numTasks) {
+            decay = 0;
             size$ = mysize/2;    
             //  writeln("size = ", size$);
         }
         else {
             //  writeln("size = ", size$);
-            decay$ = mydecay;
             size$ = mysize; 
         }
 
