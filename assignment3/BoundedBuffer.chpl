@@ -23,7 +23,6 @@ class BoundedBuffer {
     proc BoundedBuffer() {
         /* IMPLEMENT */
         cap = capacity;
-        //buff$ = [0..#cap] sync int;
         head$ = 0;
         tail$ = 0;
     }
@@ -31,7 +30,6 @@ class BoundedBuffer {
     proc produce( item:real ) : void {
         /* IMPLEMENT */
         var myhead = head$;
-        //writeln("writing", myhead);
         head$ = (myhead + 1) % cap ;
         buff$[myhead] = item;
     }
@@ -39,7 +37,6 @@ class BoundedBuffer {
     proc consume( ) : real {
         /* IMPLEMENT */
         var mytail = tail$;
-        //writeln("reading'",mytail);
         tail$ =  (mytail + 1) % cap;
         return buff$[mytail];
     }
