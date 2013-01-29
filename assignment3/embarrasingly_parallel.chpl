@@ -33,10 +33,8 @@ class Distribute {
         if(decay >= numTasks) {
             decay = 0;
             size$ = mysize/2;    
-            //  writeln("size = ", size$);
         }
         else {
-            //  writeln("size = ", size$);
             size$ = mysize; 
         }
 
