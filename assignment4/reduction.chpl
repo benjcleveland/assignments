@@ -35,7 +35,9 @@ proc reduction_a(mytid:int, myval:int): int {
 
   if(mytid == 0) {
     var read = done$;
+    task_count = 0;
     curr_value = computed_value$;
+    computed_value$ = 0;
   }
 
   return curr_value;
@@ -56,6 +58,8 @@ proc reduction_b(mytid:int, myval:int): int {
     // determine if we need to wait for a task
     if((mytid & iteration) != 0 || next >= numTasks ) {
         values$[mytid] = local_val;
+        if(mytid == 0) then
+            const v = values$[mytid];
       //  writeln("done ", mytid);
         break;
     }
@@ -64,15 +68,13 @@ proc reduction_b(mytid:int, myval:int): int {
         //writeln("writing ", mytid);
         //values$[mytid] = local_val;      
     }
+    // increment variables
     next = next + iteration;
     iteration = iteration << 1;
   }
   //writeln("finished ", mytid);
   return local_val;
 }
-
-
-var values2$ : [0..numTasks] sync int;
 
 proc reduction_c(mytid:int, myval:int): int {
   /* Implement part c, reduction with binary tree. Should work for any
@@ -86,13 +88,15 @@ proc reduction_c(mytid:int, myval:int): int {
     //writeln(mytid, " ", next, " ", mytid ^ iteration);
     // determine if we need to wait for a task
     if((mytid & iteration) != 0 || next >= numTasks ) {
-        values2$[mytid] = local_val;
+        values$[mytid] = local_val;
+        if(mytid == 0) then
+            const v = values$[mytid];
       //  writeln("done ", mytid);
         break;
     }
     else {
-        local_val += values2$[next];
-        //writeln("writing ", mytid);
+        local_val += values$[next];
+        //writeln("writing ", mytid, " with ", next);
         //values$[mytid] = local_val;      
     }
     next = next + iteration;
@@ -163,6 +167,7 @@ proc test() {
     if (tid == 0) then
       writeln("c: ", myResult);
   }
+
 /*
   //
   // Test reduction d
