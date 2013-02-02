@@ -72,12 +72,37 @@ proc reduction_b(mytid:int, myval:int): int {
 }
 
 
-/*
+var values2$ : [0..numTasks] sync int;
+
 proc reduction_c(mytid:int, myval:int): int {
   /* Implement part c, reduction with binary tree. Should work for any
      numTasks.  Paste solution to reduction_b here and modify */
+  var next = mytid + 1;
+  var iteration = 1;
+  var local_val = myval;
+  while(1) {
+    // set value 
+    //writeln(mytid, " ", next, " ", mytid & iteration);
+    //writeln(mytid, " ", next, " ", mytid ^ iteration);
+    // determine if we need to wait for a task
+    if((mytid & iteration) != 0 || next >= numTasks ) {
+        values2$[mytid] = local_val;
+      //  writeln("done ", mytid);
+        break;
+    }
+    else {
+        local_val += values2$[next];
+        //writeln("writing ", mytid);
+        //values$[mytid] = local_val;      
+    }
+    next = next + iteration;
+    iteration = iteration << 1;
+  }
+  //writeln("finished ", mytid);
+  return local_val;
 }
 
+/*
 proc reduction_d(mytid:int, myval:int, degree:int): int {
   /* NOTE: This part of the homework has been made completely optional
      and will not be graded.  Consider it a fun advanced step if you're
@@ -127,7 +152,7 @@ proc test() {
   } else {
     writeln("b: ", "does not accept non-power-of-2");
   }
-/*
+
   //
   // Test reduction c
   //
@@ -138,7 +163,7 @@ proc test() {
     if (tid == 0) then
       writeln("c: ", myResult);
   }
-
+/*
   //
   // Test reduction d
   //
