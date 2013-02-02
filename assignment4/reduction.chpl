@@ -19,7 +19,7 @@ config const numTasks = 8;
 //
 
 var computed_value$ : sync int = 0;
-var done$: sync int;
+var done$ : sync int;
 var task_count = 0;
 
 proc reduction_a(mytid:int, myval:int): int {
@@ -40,12 +40,39 @@ proc reduction_a(mytid:int, myval:int): int {
 
   return curr_value;
 }
-/*
+
+var values$ : [0..numTasks] sync int;
+
 proc reduction_b(mytid:int, myval:int): int {
   /* Implement part b, reduction with binary tree. Only needs to work
      for numTasks that are power of two */
+  var next = mytid + 1;
+  var iteration = 1;
+  var local_val = myval;
+  while(1) {
+    // set value 
+    //writeln(mytid, " ", next, " ", mytid & iteration);
+    //writeln(mytid, " ", next, " ", mytid ^ iteration);
+    // determine if we need to wait for a task
+    if((mytid & iteration) != 0 || next >= numTasks ) {
+        values$[mytid] = local_val;
+      //  writeln("done ", mytid);
+        break;
+    }
+    else {
+        local_val += values$[next];
+        //writeln("writing ", mytid);
+        //values$[mytid] = local_val;      
+    }
+    next = next + iteration;
+    iteration = iteration << 1;
+  }
+  //writeln("finished ", mytid);
+  return local_val;
 }
 
+
+/*
 proc reduction_c(mytid:int, myval:int): int {
   /* Implement part c, reduction with binary tree. Should work for any
      numTasks.  Paste solution to reduction_b here and modify */
@@ -85,7 +112,7 @@ proc test() {
     if (tid == 0) then
       writeln("a: ", myResult);
   }
-/*
+
   //
   // Test reduction b
   //
@@ -95,12 +122,12 @@ proc test() {
 
       // copy result into shared variable
       if (tid == 0) then
-	writeln("b: ", myResult);
+	    writeln("b: ", myResult);
     }
   } else {
     writeln("b: ", "does not accept non-power-of-2");
   }
-
+/*
   //
   // Test reduction c
   //
