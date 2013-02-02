@@ -45,13 +45,13 @@ const smallest3 = min3 reduce randInts;
 writeln("Smallest3 are: ", smallest3);
 
 
-/* Uncomment when you're ready to try your reduction
+/* Uncomment when you're ready to try your reduction */
 
 const mostCommon = mostFrequent reduce randInts;
 
 writeln("Most common element is: ", mostCommon);
 
-*/
+
 
 
 //
@@ -81,21 +81,21 @@ class min3: ReduceScanOp {
     //
     // This is a reasonably lame 3-element sorted 'insert'
     //
-    if (inputval < state[3]) {
-      if (inputval < state[2]) {
-	state[3] = state[2];
-	if (inputval < state[1]) {
-	  state[2] = state[1];
-	  state[1] = inputval;
-	} else {
-	  state[2] = inputval;
-	}
+      if (inputval < state[3]) {
+          if (inputval < state[2]) {
+              state[3] = state[2];
+              if (inputval < state[1]) {
+                  state[2] = state[1];
+                  state[1] = inputval;
+              } else {
+                  state[2] = inputval;
+              }
+          } else {
+              state[3] = inputval;
+          }
       } else {
-	state[3] = inputval;
+          // inputval is bigger than the 3 smallest we've seen
       }
-    } else {
-      // inputval is bigger than the 3 smallest we've seen
-    }
   }
 
   //
@@ -129,16 +129,37 @@ class mostFrequent: ReduceScanOp {
   type eltType;
 
   // TODO: Declare and initialize whatever state you want here
+  var state: [0..1] int = [0, 0];
+  var count: [0..maxval] int;
 
   proc accumulate(inputval: eltType) {
     // TODO: Accumulate an input element into your state
+    count[inputval] += 1;
+
+    // only update the most frequent if the count is higher
+    // than the current one
+    /*if( count[inputval] > state[1]) {
+        state[0] = inputval;
+        state[1] = count[inputval];
+    }
+    */
   }
 
   proc combine(partner: mostFrequent) {
     // TODO: combine the partner object's state into your state
+    // TODO - UPDATE note this will chose the lowest most frequent number in case
+    // of a tie 
+    for val in 0..maxval {
+        count[val] += partner.count[val];
+        if(count[val] > state[1]) {
+            state[0] = val;
+            state[1] = count[val];
+        }
+    }
   }
 
   proc generate() {
     // TODO: return your result based on the current state
+    return state;
   }
 }
