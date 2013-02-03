@@ -1,3 +1,9 @@
+/*
+ Ben Cleveland
+ Assignment 4
+ CSEP 524
+*/
+
 /* This program demonstrates the ability for a user to create their own
 custom reduction function and use it with Chapel's global-view reduce
 operator */
@@ -129,37 +135,31 @@ class mostFrequent: ReduceScanOp {
   type eltType;
 
   // TODO: Declare and initialize whatever state you want here
-  var state: [0..1] int = [0, 0];
-  var count: [0..maxval] int;
+  var state_count: [0..maxval] int;
 
   proc accumulate(inputval: eltType) {
     // TODO: Accumulate an input element into your state
-    count[inputval] += 1;
-
-    // only update the most frequent if the count is higher
-    // than the current one
-    /*if( count[inputval] > state[1]) {
-        state[0] = inputval;
-        state[1] = count[inputval];
-    }
-    */
+    state_count[inputval] += 1;
   }
 
   proc combine(partner: mostFrequent) {
     // TODO: combine the partner object's state into your state
-    // TODO - UPDATE note this will chose the lowest most frequent number in case
-    // of a tie 
     for val in 0..maxval {
-        count[val] += partner.count[val];
-        if(count[val] > state[1]) {
-            state[0] = val;
-            state[1] = count[val];
-        }
+        state_count[val] += partner.state_count[val];
     }
   }
 
   proc generate() {
     // TODO: return your result based on the current state
-    return state;
+    var mostFrequent: [0..1] int = [0, 0];
+    for val in 0..maxval {
+        // note - this will chose the lowest most frequent number in case of a tie
+        if(state_count[val] > mostFrequent[1]) {
+            mostFrequent[0] = val;
+            mostFrequent[1] = state_count[val];
+        }
+    }
+    // return the most frequent number
+    return mostFrequent[0];
   }
 }
