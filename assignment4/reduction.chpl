@@ -18,6 +18,7 @@ config const numTasks = 8;
 // not re-usable).
 //
 
+// global variables for reduction_a
 var computed_value$ : sync int = 0;
 var done$ : sync int;
 var task_count = 0;
@@ -37,72 +38,69 @@ proc reduction_a(mytid:int, myval:int): int {
     var read = done$;
     task_count = 0;
     curr_value = computed_value$;
-    computed_value$ = 0;
+    computed_value$ = 0; // reset the sync var so we can run again
   }
 
   return curr_value;
 }
 
-var values$ : [0..numTasks] sync int;
+// global variables for reduction_b
+var values_rb$ : [0..numTasks/2] sync int;
 
 proc reduction_b(mytid:int, myval:int): int {
   /* Implement part b, reduction with binary tree. Only needs to work
      for numTasks that are power of two */
-  var next = mytid + 1;
-  var iteration = 1;
+  var iteration = 1;    // determines which tasks will go on 
   var local_val = myval;
+  var i = mytid/2;  // location to store or get the value from 
+
   while(1) {
-    // set value 
-    //writeln(mytid, " ", next, " ", mytid & iteration);
-    //writeln(mytid, " ", next, " ", mytid ^ iteration);
     // determine if we need to wait for a task
-    if((mytid & iteration) != 0 || next >= numTasks ) {
-        values$[mytid] = local_val;
+    if((mytid & iteration) != 0 || iteration >= numTasks ) {
+        values_rb$[i] = local_val;
         if(mytid == 0) then
-            const v = values$[mytid];
-      //  writeln("done ", mytid);
+            const v = values_rb$[i];
         break;
     }
     else {
-        local_val += values$[next];
-        //writeln("writing ", mytid);
-        //values$[mytid] = local_val;      
+        // wait for the other tasks value
+        local_val += values_rb$[i];
     }
-    // increment variables
-    next = next + iteration;
+    
+    // determine where to store the next value
+    i = i / 2;
     iteration = iteration << 1;
   }
-  //writeln("finished ", mytid);
+
   return local_val;
 }
+
+// global variables for reduction_c
+var values$ : [0..numTasks] sync int;
 
 proc reduction_c(mytid:int, myval:int): int {
   /* Implement part c, reduction with binary tree. Should work for any
      numTasks.  Paste solution to reduction_b here and modify */
-  var next = mytid + 1;
-  var iteration = 1;
+  var next = mytid + 1; // the next element to combine with
+  var iteration = 1;    // determines which task will continue
   var local_val = myval;
+
   while(1) {
-    // set value 
-    //writeln(mytid, " ", next, " ", mytid & iteration);
-    //writeln(mytid, " ", next, " ", mytid ^ iteration);
     // determine if we need to wait for a task
     if((mytid & iteration) != 0 || next >= numTasks ) {
+        // set value 
         values$[mytid] = local_val;
-        if(mytid == 0) then
+        if(mytid == 0) then // read the value out so the reduction can be reused
             const v = values$[mytid];
-      //  writeln("done ", mytid);
         break;
     }
     else {
         local_val += values$[next];
-        //writeln("writing ", mytid, " with ", next);
-        //values$[mytid] = local_val;      
     }
     next = next + iteration;
     iteration = iteration << 1;
   }
-  //writeln("finished ", mytid);
+
   return local_val;
 }
 
