@@ -51,7 +51,7 @@ proc reduction_a(mytid:int, myval:int): int {
 }
 
 // global variables for reduction_b
-var values_rb$ : [0..numTasks/2] sync int;
+var values_rb$ : [0..#numTasks/2] sync int;
 
 proc reduction_b(mytid:int, myval:int): int {
   /* Implement part b, reduction with binary tree. Only needs to work
@@ -82,7 +82,7 @@ proc reduction_b(mytid:int, myval:int): int {
 }
 
 // global variables for reduction_c
-var values$ : [0..numTasks] sync int;
+var values$ : [0..#numTasks] sync int;
 
 proc reduction_c(mytid:int, myval:int): int {
   /* Implement part c, reduction with binary tree. Should work for any
