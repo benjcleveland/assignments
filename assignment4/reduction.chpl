@@ -1,3 +1,9 @@
+/*
+ Ben Cleveland
+ CSEP 524
+ Assignment 4
+*/
+
 config const numTasks = 8;
 
 //
