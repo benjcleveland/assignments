@@ -1,19 +1,23 @@
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#include <time.h>
+
 //
 // The logical problem size -- N x N elements
 //
-#define N 10
-//#define N 1000
+//#define N 10
+#define N 1000
 
 //
 // We'll terminate when the difference between all elements in
 // adjacent iterations is less than this value of epsilon.
 //
-#define epsilon .01
-//#define epsilon .000001
+//#define epsilon .01
+#define epsilon .000001
 
 //
 // a utility routine for printing the inner N x N elements of
@@ -59,6 +63,19 @@ void initArr(double A[N+2][N+2]) {
   A[3*N/4+1][N/4+1] = -1.0;
 }
 
+void timespec_diff(struct timespec start, struct timespec end, struct timespec *diff)
+{
+    if((end.tv_nsec - start.tv_nsec) < 0)
+    {
+        diff->tv_sec = end.tv_sec - start.tv_sec - 1;
+        diff->tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+    }
+    else
+    {
+        diff->tv_sec = end.tv_sec - start.tv_sec;
+        diff->tv_nsec = end.tv_nsec - start.tv_nsec;
+    }
+}
 
 //
 // These are our two main work arrays -- we declare them to be N+2 x N+2
@@ -72,15 +89,26 @@ double Y[N+2][N+2];
 int main() {
   int i, j;
 
+  struct timespec start_time;
+  struct timespec end_time;
+  struct timespec diff_time;
+
+
   initArr(X);
   
   double delta = 0.0;
   int numIters = 0;
+
+    // start timer
+    if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
+        perror("Error from clock_gettime - getting start time!\n");
+
   do {
     numIters += 1;
     //
     // TODO: implement the stencil computation here
     //
+    #pragma omp parallel for private(j)
     for( i = 1; i <=N; ++i) {
         for(j = 1; j <=N; ++j) {
             Y[i][j] = ((X[i][j]*.25) + (X[i+1][j] + X[i-1][j] + X[i][j+1] + X[i][j-1])*.125 + 
@@ -91,11 +119,12 @@ int main() {
     // next iteration here...
     //
     delta = 0;
+
+    #pragma omp parallel for private(j) reduction(max:delta)
     for(i = 1; i <=N; ++i) {
         for(j = 1; j <=N; ++j) { 
             double tmp_d = fabs(X[i][j] - Y[i][j]);
-            if( delta < tmp_d )
-                delta = tmp_d;
+            delta = fmaxf(delta, tmp_d);
         }
     }
     // 1) check for termination here by computing delta -- the largest
@@ -105,7 +134,7 @@ int main() {
     //
     // 2) copy Y back to X to set up for the next execution
     //
-    // todo use memcpy instead? 
+    #pragma omp parallel for private(j)
     for(i = 1; i <= N; ++i) {
         for( j = 1; j <= N; ++j) {
             X[i][j] = Y[i][j];
@@ -113,7 +142,16 @@ int main() {
     }
   } while (delta > epsilon);
   
-  printArr(X);
+  // stop timer
+    if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
+        perror("Error from clock_gettime - getting end time!\n");
+
+    timespec_diff(start_time, end_time, &diff_time);
+
+    // report results
+    printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+
+  //printArr(X);
 
   printf("Took %d iterations to converge\n", numIters);
 }

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS+=-std=c99 -fopenmp -lm
+CFLAGS+=-std=c99 -fopenmp -lm -lrt -D_POSIX_C_SOURCE=199309L
 
 CHPL=chpl
 
