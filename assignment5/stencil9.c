@@ -124,7 +124,7 @@ int main() {
     for(i = 1; i <=N; ++i) {
         for(j = 1; j <=N; ++j) { 
             double tmp_d = fabs(X[i][j] - Y[i][j]);
-            delta = fmaxf(delta, tmp_d);
+            delta = fmax(delta, tmp_d);
         }
     }
     // 1) check for termination here by computing delta -- the largest
