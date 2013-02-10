@@ -155,4 +155,3 @@ int main() {
 
   printf("Took %d iterations to converge\n", numIters);
 }
-
