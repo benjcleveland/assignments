@@ -15,7 +15,7 @@
 //
 #ifndef ROWS
 //#define ROWS 201
-#define ROWS 5001
+#define ROWS 8001
 #endif
 #ifndef COLS
 #define COLS ROWS
@@ -122,7 +122,7 @@ void timespec_diff(struct timespec start, struct timespec end, struct timespec *
 
 int main() {
   int i,j;
-  int max = 0;
+  int max_step = 0;
 
    struct timespec start_time;
   struct timespec end_time;
@@ -148,6 +148,7 @@ int main() {
   // and storing the resulting number of steps into the corresponding
   // array element
   //
+  #pragma omp parallel for private(j) //schedule(dynamic)
   for (i=0; i<ROWS; i++) {
     for (j=0; j<COLS; j++) {
       NumSteps[i][j] = coordToNumSteps(i,j);
@@ -159,9 +160,10 @@ int main() {
   // in the NumSteps array (in case no pixels required the full MAXSTEPS
   // iterations, and to get practice with OpenMP reductions.
   //
+  #pragma omp parallel for private(j) reduction(max:max_step)
   for (i=0; i<ROWS; i++) {
     for (j=0; j<COLS; j++) {
-      max = fmax(max,NumSteps[i][j]);
+      max_step = fmax(max_step,NumSteps[i][j]);
     }
   }
   
@@ -175,5 +177,5 @@ int main() {
     printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
   //plot(NumSteps, MAXSTEPS);
-  plot(NumSteps, max);
+  plot(NumSteps, max_step);
 }
