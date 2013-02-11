@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include <time.h>
 
 //
@@ -104,57 +103,57 @@ int main() {
   double delta = 0.0;
   int numIters = 0;
 
-    // start timer
-    if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
-        perror("Error from clock_gettime - getting start time!\n");
+  // start timer
+  if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
+      perror("Error from clock_gettime - getting start time!\n");
 
   do {
-    numIters += 1;
-    //
-    // TODO: implement the stencil computation here
-    //
-    #pragma omp parallel for private(j) shared(X) shared(Y)
-    for( i = 1; i <=N; ++i) {
-        for(j = 1; j <=N; ++j) {
-            Y[i][j] = ((X[i][j]*.25) + (X[i+1][j] + X[i-1][j] + X[i][j+1] + X[i][j-1])*.125 + 
-                (X[i+1][j+1] + X[i-1][j+1] + X[i-1][j-1] + X[i+1][j-1])*.0625);
-        }
-    }
-    // TODO: implement the computation of delta and get ready for the
-    // next iteration here...
-    //
-    delta = 0;
+      numIters += 1;
+      //
+      // TODO: implement the stencil computation here
+      //
+#pragma omp parallel for private(j) shared(X) shared(Y)
+      for( i = 1; i <=N; ++i) {
+          for(j = 1; j <=N; ++j) {
+              Y[i][j] = ((X[i][j]*.25) + (X[i+1][j] + X[i-1][j] + X[i][j+1] + X[i][j-1])*.125 + 
+                      (X[i+1][j+1] + X[i-1][j+1] + X[i-1][j-1] + X[i+1][j-1])*.0625);
+          }
+      }
+      // TODO: implement the computation of delta and get ready for the
+      // next iteration here...
+      //
+      delta = 0;
 
-    #pragma omp parallel for private(j) reduction(max:delta) shared(X) shared(Y)
-    for(i = 1; i <=N; ++i) {
-        for(j = 1; j <=N; ++j) { 
-            double tmp_d = fabs(X[i][j] - Y[i][j]);
-            delta = fmax(delta, tmp_d);
-        }
-    }
-    // 1) check for termination here by computing delta -- the largest
-    //    absolute difference between corresponding elements of X and Y
-    //    (i.e., the biggest change due to the application of the stencil 
-    //    for this iteration of the while loop)
-    //
-    // 2) copy Y back to X to set up for the next execution
-    //
-    #pragma omp parallel for private(j) shared(X) shared(Y)
-    for(i = 1; i <= N; ++i) {
-        for( j = 1; j <= N; ++j) {
-            X[i][j] = Y[i][j];
-        }
-    }
+#pragma omp parallel for private(j) reduction(max:delta) shared(X) shared(Y)
+      for(i = 1; i <=N; ++i) {
+          for(j = 1; j <=N; ++j) { 
+              double tmp_d = fabs(X[i][j] - Y[i][j]);
+              delta = fmax(delta, tmp_d);
+          }
+      }
+      // 1) check for termination here by computing delta -- the largest
+      //    absolute difference between corresponding elements of X and Y
+      //    (i.e., the biggest change due to the application of the stencil 
+      //    for this iteration of the while loop)
+      //
+      // 2) copy Y back to X to set up for the next execution
+      //
+#pragma omp parallel for private(j) shared(X) shared(Y)
+      for(i = 1; i <= N; ++i) {
+          for( j = 1; j <= N; ++j) {
+              X[i][j] = Y[i][j];
+          }
+      }
   } while (delta > epsilon);
-  
+
   // stop timer
-    if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
-        perror("Error from clock_gettime - getting end time!\n");
+  if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
+      perror("Error from clock_gettime - getting end time!\n");
 
-    timespec_diff(start_time, end_time, &diff_time);
+  timespec_diff(start_time, end_time, &diff_time);
 
-    // report results
-    printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+  // report results
+  printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
   //printArr(X);
 

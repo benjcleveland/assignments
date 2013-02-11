@@ -130,13 +130,13 @@ int main() {
   int i,j;
   int max_step = 0;
 
-   struct timespec start_time;
+  struct timespec start_time;
   struct timespec end_time;
   struct timespec diff_time;
 
-    // start timer
-    if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
-        perror("Error from clock_gettime - getting start time!\n");
+  // start timer
+  if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
+      perror("Error from clock_gettime - getting start time!\n");
 
   //
   // This is a completely bogus computation to fill the array with a
@@ -174,13 +174,13 @@ int main() {
   }
   
   // stop timer
-    if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
-        perror("Error from clock_gettime - getting end time!\n");
+  if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
+      perror("Error from clock_gettime - getting end time!\n");
 
-    timespec_diff(start_time, end_time, &diff_time);
+  timespec_diff(start_time, end_time, &diff_time);
 
-    // report results
-    printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+  // report results
+  printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
   //plot(NumSteps, MAXSTEPS);
   //plot(NumSteps, max_step);
