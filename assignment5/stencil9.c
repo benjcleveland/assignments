@@ -1,3 +1,8 @@
+/*
+ * Ben Cleveland
+ * Assignment 5
+ * CSE P 524
+ */
 
 #include <math.h>
 #include <stdio.h>
@@ -108,7 +113,7 @@ int main() {
     //
     // TODO: implement the stencil computation here
     //
-    #pragma omp parallel for private(j)
+    #pragma omp parallel for private(j) shared(X) shared(Y)
     for( i = 1; i <=N; ++i) {
         for(j = 1; j <=N; ++j) {
             Y[i][j] = ((X[i][j]*.25) + (X[i+1][j] + X[i-1][j] + X[i][j+1] + X[i][j-1])*.125 + 
@@ -120,7 +125,7 @@ int main() {
     //
     delta = 0;
 
-    #pragma omp parallel for private(j) reduction(max:delta)
+    #pragma omp parallel for private(j) reduction(max:delta) shared(X) shared(Y)
     for(i = 1; i <=N; ++i) {
         for(j = 1; j <=N; ++j) { 
             double tmp_d = fabs(X[i][j] - Y[i][j]);
@@ -134,7 +139,7 @@ int main() {
     //
     // 2) copy Y back to X to set up for the next execution
     //
-    #pragma omp parallel for private(j)
+    #pragma omp parallel for private(j) shared(X) shared(Y)
     for(i = 1; i <= N; ++i) {
         for( j = 1; j <= N; ++j) {
             X[i][j] = Y[i][j];

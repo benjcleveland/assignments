@@ -1,3 +1,9 @@
+/*
+ * Ben Cleveland
+ * Assignment 5
+ * CSEP 524
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -148,7 +154,7 @@ int main() {
   // and storing the resulting number of steps into the corresponding
   // array element
   //
-  #pragma omp parallel for private(j) //schedule(dynamic)
+  #pragma omp parallel for private(j) shared(NumSteps) schedule(dynamic, 100)
   for (i=0; i<ROWS; i++) {
     for (j=0; j<COLS; j++) {
       NumSteps[i][j] = coordToNumSteps(i,j);
@@ -177,5 +183,5 @@ int main() {
     printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
   //plot(NumSteps, MAXSTEPS);
-  plot(NumSteps, max_step);
+  //plot(NumSteps, max_step);
 }
