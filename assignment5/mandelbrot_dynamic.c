@@ -154,7 +154,7 @@ int main() {
   // and storing the resulting number of steps into the corresponding
   // array element
   //
-  #pragma omp parallel for private(j) shared(NumSteps)
+  #pragma omp parallel for private(j) shared(NumSteps) schedule(dynamic, 100)
   for (i=0; i<ROWS; i++) {
     for (j=0; j<COLS; j++) {
       NumSteps[i][j] = coordToNumSteps(i,j);
