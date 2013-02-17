@@ -244,8 +244,8 @@ int main(int argc, char* argv[]) {
   }
   // if we are done writing all of our rows go to the next proc
   if(myProcID + 1 < numProcs && colEnd == N ) {
-      for(int i = 0; i < N/myNumCols; ++i) {
-        printf("sending! %d\n", myProcID + 1 + i);
+      for(int i = 0; i < numCols; ++i) {
+        printf("sending! %d %d\n", myProcID + 1 + i, myProcID);
           MPI_Send(&myProcID, 1, MPI_INT, myProcID + i + 1, 0, MPI_COMM_WORLD);
       printf("sent!\n");
       }
