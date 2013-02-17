@@ -75,8 +75,12 @@ int main(int argc, char* argv[]) {
   int numProcs, myProcID;
   int numRows, numCols;
   int myRow, myCol;
+  
   int rowStart, rowEnd;
   int colStart, colEnd;
+  int myNumRows, myNumCols;
+
+  double **myArray;
 
   //
   // Boilerplate MPI startup -- query # processes/images and my unique ID
@@ -108,10 +112,13 @@ int main(int argc, char* argv[]) {
      owns, using a block x block distribution */
   computeMyBlockPart(N, numRows, myRow, &rowStart, &rowEnd); 
   computeMyBlockPart(N, numCols, myCol, &colStart, &colEnd); 
-  printf("Process %d of %d checking in\n"
+  /*printf("Process %d of %d checking in\n"
          "I am at (%d, %d) of %d x %d processes\n"
          "rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
          myRow, myCol, numRows, numCols, rowStart, rowEnd, colStart, colEnd);
+*/
+  myNumRows = rowEnd - rowStart;
+  myNumCols = colEnd - colStart;
 
   /* TODO (step 2): Allocate arrays corresponding to the local portion
      of data owned by this process -- in particular, don't allocate an
@@ -120,15 +127,69 @@ int main(int argc, char* argv[]) {
      to store global boundary conditions and/or overlap regions/ghost
      cells for caching neighboring processors' values, similar to what
      was shown for the 1D 3-point stencil in class, simply in 2D. */
+  
+  // TODO -  is there a better way to do this?
+  myArray = calloc(myNumRows+1, sizeof(*myArray));
+  for(int i = 0; i < myNumRows+1; ++i)
+      myArray[i] = calloc(myNumCols+1, sizeof(**myArray));
 
   /* TODO (step 3): Initialize the arrays to zero. */
+  // done with the calloc
 
   /* TODO (step 4): Initialize the arrays to contain four +/-1.0
      values, as in assignment #5.  Note that you will need to do a
      global -> local index calculation to determine (a) which
      process(es) owns the points and (b) which array value the points
      correspond to. */
+     // TODO - clean this up so there is not so much duplication
+     int i = N/4+1;
+     int j = N/4+1;
+    /* int globalRowStart = (myRow != numRows -1) ? rowStart * myRow : rowStart;
+     int globalRowEnd = (myRow != 0 && myRow != numRows - 1) ? rowEnd * myRow : rowEnd;
+     int globalColStart = (myCol != numCols - 1) ? colStart * myCol : colStart;
+     int globalColEnd = (myCol != 0 && myCol != numCols -1) ? colEnd * myCol : colEnd;
+    */
+    if( i >=  rowStart && i < rowEnd ) {
+        if( j >= colStart && j < colEnd ) {      
+            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart][j - colStart] = 1;
+        }
+    }
 
+    i = 3*N/4+1;
+    j = 3*N/4+1;
+    if( i >=  rowStart && i < rowEnd ) {
+        if( j >= colStart && j < colEnd ) { 
+            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart][j - colStart] = 1;
+        }
+    }
+
+    i = N/4+1;
+    j = 3*N/4+1;
+    if( i >=  rowStart && i < rowEnd ) {
+        if( j >= colStart && j < colEnd ) {    
+            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart][j - colStart] = 1;
+        }
+    }
+
+    i = 3*N/4+1;
+    j = N/4+1;
+    if( i >=  rowStart && i < rowEnd ) {
+        if( j >= colStart && j < colEnd ) {      
+            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart][j - colStart] = 1;
+        }
+    }
+
+/*
+
+  printf("Process %d of %d checking in\n"
+         "I am at (%d, %d) of %d x %d processes\n"
+         "global rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
+         myRow, myCol, numRows, numCols, globalRowStart, globalRowEnd, globalColStart, globalColEnd);
+*/
   /* TODO (step 5): Implement a routine to sequentially print out the
      distributed array to the console in a coordinated manner such
      that it appears as a global whole, as we logically think of it.
@@ -138,6 +199,9 @@ int main(int argc, char* argv[]) {
      Send/Recv calls to coordinate between the processes.  Use this
      routine to verify that your initialization is correct.
   */
+  // for each row
+  // write my columns
+     // 
 
   /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
      and Wait routines.  Use the non-blocking routines in order to get
