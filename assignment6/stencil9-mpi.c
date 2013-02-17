@@ -51,11 +51,32 @@ void computeGridPos(int me, int numRows, int numCols, int* myRow, int* myCol) {
 // END OF PROVIDED ROUTINES (should not need to change)
 // ------------------------------------------------------------------------------
 
+/*
+ * Determine which portion of the array this task has to deal with
+ * using a block distribution
+ *
+ * Assumes that the number of tasks is less than the number if items
+ *
+ */
+void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int *myHi)
+{
+    // determine the number for each block
+    int items_per_block = ceil((double)numItems/numTasks);
+
+    // determine the high
+    *myHi = myTaskID + 1 >= numTasks ? numItems : items_per_block * (myTaskID + 1); 
+
+    // determine the low
+    *myLo = items_per_block * myTaskID;
+}
+
 
 int main(int argc, char* argv[]) {
   int numProcs, myProcID;
   int numRows, numCols;
   int myRow, myCol;
+  int rowStart, rowEnd;
+  int colStart, colEnd;
 
   //
   // Boilerplate MPI startup -- query # processes/images and my unique ID
@@ -76,15 +97,21 @@ int main(int argc, char* argv[]) {
   // Sanity check that we're up and running correctly.  Feel free to
   // disable this once you get things running.
   //
-  printf("Process %d of %d checking in\n"
-         "I am at (%d, %d) of %d x %d processes\n\n", myProcID, numProcs, 
-         myRow, myCol, numRows, numCols);
+  //printf("Process %d of %d checking in\n"
+  //       "I am at (%d, %d) of %d x %d processes\n\n", myProcID, numProcs, 
+  //       myRow, myCol, numRows, numCols);
 
 
   /* TODO (step 1): Using your block distribution (or a
      corrected/improved/evolved version of it) from assignment #1,
      compute the portion of the global N x N array that this task
      owns, using a block x block distribution */
+  computeMyBlockPart(numRows, numProcs, myRow, &rowStart, &rowEnd); 
+  computeMyBlockPart(numCols, numProcs, myCol, &colStart, &colEnd); 
+  printf("Process %d of %d checking in\n"
+         "I am at (%d, %d) of %d x %d processes\n"
+         "rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
+         myRow, myCol, numRows, numCols, rowStart, rowEnd, colStart, colEnd);
 
   /* TODO (step 2): Allocate arrays corresponding to the local portion
      of data owned by this process -- in particular, don't allocate an
