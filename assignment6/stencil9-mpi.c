@@ -65,9 +65,10 @@ void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int
 
     // determine the high
     *myHi = myTaskID + 1 >= numTasks ? numItems : items_per_block * (myTaskID + 1); 
-
+    if(*myHi > numItems)
+        *myHi = numItems;
     // determine the low
-    *myLo = items_per_block * myTaskID;
+    *myLo = (items_per_block * myTaskID) >= numItems ? numItems : items_per_block * myTaskID;
 }
 
 
@@ -114,11 +115,11 @@ int main(int argc, char* argv[]) {
      owns, using a block x block distribution */
   computeMyBlockPart(N, numRows, myRow, &rowStart, &rowEnd); 
   computeMyBlockPart(N, numCols, myCol, &colStart, &colEnd); 
-  /*printf("Process %d of %d checking in\n"
+  printf("Process %d of %d checking in\n"
          "I am at (%d, %d) of %d x %d processes\n"
          "rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
          myRow, myCol, numRows, numCols, rowStart, rowEnd, colStart, colEnd);
-*/
+
   myNumRows = rowEnd - rowStart;
   myNumCols = colEnd - colStart;
 
@@ -204,27 +205,27 @@ int main(int argc, char* argv[]) {
   FILE *fp;
   if(myRow != 0) {
         // wait for a signal
-      printf("waiting...! %d\n", myProcID);
+      //printf("waiting...! %d\n", myProcID);
         MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-      printf("receiving %d!\n", myProcID);
+      //printf("receiving %d!\n", myProcID);
     }
   
   for(int i = 1; i <= myNumRows; ++i) {
       if(myCol != 0 ) {
-      printf("waiting... for row! %d\n", myProcID);
+      //printf("waiting... for row! %d\n", myProcID);
         MPI_Recv(&rec_val, 1, MPI_INT, myProcID - 1, 1, MPI_COMM_WORLD, &status);
-      printf("receiving %d for row!\n", myProcID);
+      //printf("receiving %d for row!\n", myProcID);
       }
     fp = fopen("tmp_file", "a");
     for(int j = 1; j <= myNumCols; ++j) {
         //printf("%5lf, ", myArray[i][j]);
-        //fprintf(fp, "%5lf, ", myArray[i][j]);
-        fprintf(fp, "%d writing, ", myProcID);
+        fprintf(fp, "%5lf, ", myArray[i][j]);
+        //fprintf(fp, "%d writing, ", myProcID);
     }
 
     if(colEnd != N) {
         fclose(fp);
-        printf("sending for row %d\n", myProcID);
+        //printf("sending for row %d\n", myProcID);
         if(colStart == 0)
             rec_val = myProcID;
         MPI_Send(&rec_val, 1, MPI_INT, myProcID + 1, 1, MPI_COMM_WORLD);
@@ -236,7 +237,7 @@ int main(int argc, char* argv[]) {
         fprintf(fp, "\n");
         fclose(fp);
         if(colStart != 0) {
-            printf("newline %d %d\n", myProcID, rec_val);
+            //printf("newline %d %d\n", myProcID, rec_val);
             MPI_Send(&myProcID, 1, MPI_INT, rec_val, 1, MPI_COMM_WORLD);
             //printf("newline sent %d\n", myProcID);
         }
@@ -245,9 +246,9 @@ int main(int argc, char* argv[]) {
   // if we are done writing all of our rows go to the next proc
   if(myProcID + 1 < numProcs && colEnd == N ) {
       for(int i = 0; i < numCols; ++i) {
-        printf("sending! %d %d\n", myProcID + 1 + i, myProcID);
+        //printf("sending! %d %d\n", myProcID + 1 + i, myProcID);
           MPI_Send(&myProcID, 1, MPI_INT, myProcID + i + 1, 0, MPI_COMM_WORLD);
-      printf("sent!\n");
+      //printf("sent!\n");
       }
   }
 
