@@ -81,6 +81,8 @@ int main(int argc, char* argv[]) {
   int myNumRows, myNumCols;
 
   double **myArray;
+  int rec_val;
+  MPI_Status status;
 
   //
   // Boilerplate MPI startup -- query # processes/images and my unique ID
@@ -129,9 +131,9 @@ int main(int argc, char* argv[]) {
      was shown for the 1D 3-point stencil in class, simply in 2D. */
   
   // TODO -  is there a better way to do this?
-  myArray = calloc(myNumRows+1, sizeof(*myArray));
-  for(int i = 0; i < myNumRows+1; ++i)
-      myArray[i] = calloc(myNumCols+1, sizeof(**myArray));
+  myArray = calloc(myNumRows+2, sizeof(*myArray));
+  for(int i = 0; i < myNumRows+2; ++i)
+      myArray[i] = calloc(myNumCols+2, sizeof(**myArray));
 
   /* TODO (step 3): Initialize the arrays to zero. */
   // done with the calloc
@@ -142,8 +144,8 @@ int main(int argc, char* argv[]) {
      process(es) owns the points and (b) which array value the points
      correspond to. */
      // TODO - clean this up so there is not so much duplication
-     int i = N/4+1;
-     int j = N/4+1;
+     int i = N/4;
+     int j = N/4;
     /* int globalRowStart = (myRow != numRows -1) ? rowStart * myRow : rowStart;
      int globalRowEnd = (myRow != 0 && myRow != numRows - 1) ? rowEnd * myRow : rowEnd;
      int globalColStart = (myCol != numCols - 1) ? colStart * myCol : colStart;
@@ -151,35 +153,35 @@ int main(int argc, char* argv[]) {
     */
     if( i >=  rowStart && i < rowEnd ) {
         if( j >= colStart && j < colEnd ) {      
-            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
-            myArray[i - rowStart][j - colStart] = 1;
+            //printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart+1][j - colStart+1] = 1;
         }
     }
 
-    i = 3*N/4+1;
-    j = 3*N/4+1;
+    i = 3*N/4;
+    j = 3*N/4;
     if( i >=  rowStart && i < rowEnd ) {
         if( j >= colStart && j < colEnd ) { 
-            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
-            myArray[i - rowStart][j - colStart] = 1;
+            //printf("I have it! %d (%d, %d) rowStart (%d) colStart (%d)\n", myProcID, i, j, rowStart, colStart);
+            myArray[i - rowStart+1][j - colStart+1] = 1;
         }
     }
 
-    i = N/4+1;
-    j = 3*N/4+1;
+    i = N/4;
+    j = 3*N/4;
     if( i >=  rowStart && i < rowEnd ) {
         if( j >= colStart && j < colEnd ) {    
-            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
-            myArray[i - rowStart][j - colStart] = 1;
+            //printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart+1][j - colStart+1] = 1;
         }
     }
 
-    i = 3*N/4+1;
-    j = N/4+1;
+    i = 3*N/4;
+    j = N/4;
     if( i >=  rowStart && i < rowEnd ) {
         if( j >= colStart && j < colEnd ) {      
-            printf("I have it! %d (%d, %d)\n", myProcID, i, j);
-            myArray[i - rowStart][j - colStart] = 1;
+            //printf("I have it! %d (%d, %d)\n", myProcID, i, j);
+            myArray[i - rowStart+1][j - colStart+1] = 1;
         }
     }
 
@@ -199,9 +201,55 @@ int main(int argc, char* argv[]) {
      Send/Recv calls to coordinate between the processes.  Use this
      routine to verify that your initialization is correct.
   */
-  // for each row
-  // write my columns
-     // 
+  FILE *fp;
+  if(myRow != 0) {
+        // wait for a signal
+      printf("waiting...! %d\n", myProcID);
+        MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+      printf("receiving %d!\n", myProcID);
+    }
+  
+  for(int i = 1; i <= myNumRows; ++i) {
+      if(myCol != 0 ) {
+      printf("waiting... for row! %d\n", myProcID);
+        MPI_Recv(&rec_val, 1, MPI_INT, myProcID - 1, 1, MPI_COMM_WORLD, &status);
+      printf("receiving %d for row!\n", myProcID);
+      }
+    fp = fopen("tmp_file", "a");
+    for(int j = 1; j <= myNumCols; ++j) {
+        //printf("%5lf, ", myArray[i][j]);
+        //fprintf(fp, "%5lf, ", myArray[i][j]);
+        fprintf(fp, "%d writing, ", myProcID);
+    }
+
+    if(colEnd != N) {
+        fclose(fp);
+        printf("sending for row %d\n", myProcID);
+        if(colStart == 0)
+            rec_val = myProcID;
+        MPI_Send(&rec_val, 1, MPI_INT, myProcID + 1, 1, MPI_COMM_WORLD);
+        if(colStart == 0) 
+            MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+        //printf("moving on %d\n", myProcID);
+        // wait for the next row
+    } else {
+        fprintf(fp, "\n");
+        fclose(fp);
+        if(colStart != 0) {
+            printf("newline %d %d\n", myProcID, rec_val);
+            MPI_Send(&myProcID, 1, MPI_INT, rec_val, 1, MPI_COMM_WORLD);
+            //printf("newline sent %d\n", myProcID);
+        }
+    }
+  }
+  // if we are done writing all of our rows go to the next proc
+  if(myProcID + 1 < numProcs && colEnd == N ) {
+      for(int i = 0; i < N/myNumCols; ++i) {
+        printf("sending! %d\n", myProcID + 1 + i);
+          MPI_Send(&myProcID, 1, MPI_INT, myProcID + i + 1, 0, MPI_COMM_WORLD);
+      printf("sent!\n");
+      }
+  }
 
   /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
      and Wait routines.  Use the non-blocking routines in order to get

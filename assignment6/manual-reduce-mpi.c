@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
             // add the other tasks value to our value
             // receive the value
             //printf("%d waiting for %d\n", myProcID, source, (myProcID ^ iteration));
+              // TODO - handle errors
             MPI_Recv(&rec_val, 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status); 
             //printf("Recived! %d\n", rec_val);
             local_val += rec_val;
