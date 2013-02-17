@@ -106,8 +106,8 @@ int main(int argc, char* argv[]) {
      corrected/improved/evolved version of it) from assignment #1,
      compute the portion of the global N x N array that this task
      owns, using a block x block distribution */
-  computeMyBlockPart(numRows, numProcs, myRow, &rowStart, &rowEnd); 
-  computeMyBlockPart(numCols, numProcs, myCol, &colStart, &colEnd); 
+  computeMyBlockPart(N, numRows, myRow, &rowStart, &rowEnd); 
+  computeMyBlockPart(N, numCols, myCol, &colStart, &colEnd); 
   printf("Process %d of %d checking in\n"
          "I am at (%d, %d) of %d x %d processes\n"
          "rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
