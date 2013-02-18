@@ -72,6 +72,68 @@ void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int
 }
 
 
+void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows, int myNumCols, int colStart, int colEnd,int numCols,  double **myArray) {
+    int         rec_val;
+    MPI_Status  status;
+
+    FILE *fp;
+    if(myRow != 0) {
+        // wait for a signal
+        //printf("waiting...! %d\n", myProcID);
+        MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+        //printf("receiving %d!\n", myProcID);
+    }
+
+    for(int i = 1; i <= myNumRows; ++i) {
+        if(myCol != 0 ) {
+            //printf("waiting... for row! %d\n", myProcID);
+            MPI_Recv(&rec_val, 1, MPI_INT, myProcID - 1, 1, MPI_COMM_WORLD, &status);
+            //printf("receiving %d for row!\n", myProcID);
+        }
+        fp = fopen("tmp_file", "a");
+        for(int j = 1; j <= myNumCols; ++j) {
+            //printf("%5lf, ", myArray[i][j]);
+            fprintf(fp, "%5lf ", myArray[i][j]);
+            //fprintf(fp, "%d writing, ", myProcID);
+        }
+
+        if(colEnd != N) {
+            fclose(fp);
+            //printf("sending for row %d\n", myProcID);
+            if(colStart == 0)
+                rec_val = myProcID;
+            MPI_Send(&rec_val, 1, MPI_INT, myProcID + 1, 1, MPI_COMM_WORLD);
+            if(colStart == 0) 
+                MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+            //printf("moving on %d\n", myProcID);
+            // wait for the next row
+        } else {
+            fprintf(fp, "\n");
+            fclose(fp);
+            if(colStart != 0) {
+                //printf("newline %d %d\n", myProcID, rec_val);
+                MPI_Send(&myProcID, 1, MPI_INT, rec_val, 1, MPI_COMM_WORLD);
+                //printf("newline sent %d\n", myProcID);
+            }
+        }
+    }
+    // if we are done writing all of our rows go to the next proc
+    if(myProcID + 1 < numProcs && colEnd == N ) {
+        for(int i = 0; i < numCols; ++i) {
+            //printf("sending! %d %d\n", myProcID + 1 + i, myProcID);
+            MPI_Send(&myProcID, 1, MPI_INT, myProcID + i + 1, 0, MPI_COMM_WORLD);
+            //printf("sent!\n");
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(myProcID == 0) {
+        // display the file
+        system("cat tmp_file; rm tmp_file");
+    } 
+}
+
 int main(int argc, char* argv[]) {
   int numProcs, myProcID;
   int numRows, numCols;
@@ -202,57 +264,9 @@ int main(int argc, char* argv[]) {
      Send/Recv calls to coordinate between the processes.  Use this
      routine to verify that your initialization is correct.
   */
-  FILE *fp;
-  if(myRow != 0) {
-        // wait for a signal
-      //printf("waiting...! %d\n", myProcID);
-        MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-      //printf("receiving %d!\n", myProcID);
-    }
-  
-  for(int i = 1; i <= myNumRows; ++i) {
-      if(myCol != 0 ) {
-      //printf("waiting... for row! %d\n", myProcID);
-        MPI_Recv(&rec_val, 1, MPI_INT, myProcID - 1, 1, MPI_COMM_WORLD, &status);
-      //printf("receiving %d for row!\n", myProcID);
-      }
-    fp = fopen("tmp_file", "a");
-    for(int j = 1; j <= myNumCols; ++j) {
-        //printf("%5lf, ", myArray[i][j]);
-        fprintf(fp, "%5lf, ", myArray[i][j]);
-        //fprintf(fp, "%d writing, ", myProcID);
-    }
+    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
-    if(colEnd != N) {
-        fclose(fp);
-        //printf("sending for row %d\n", myProcID);
-        if(colStart == 0)
-            rec_val = myProcID;
-        MPI_Send(&rec_val, 1, MPI_INT, myProcID + 1, 1, MPI_COMM_WORLD);
-        if(colStart == 0) 
-            MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
-        //printf("moving on %d\n", myProcID);
-        // wait for the next row
-    } else {
-        fprintf(fp, "\n");
-        fclose(fp);
-        if(colStart != 0) {
-            //printf("newline %d %d\n", myProcID, rec_val);
-            MPI_Send(&myProcID, 1, MPI_INT, rec_val, 1, MPI_COMM_WORLD);
-            //printf("newline sent %d\n", myProcID);
-        }
-    }
-  }
-  // if we are done writing all of our rows go to the next proc
-  if(myProcID + 1 < numProcs && colEnd == N ) {
-      for(int i = 0; i < numCols; ++i) {
-        //printf("sending! %d %d\n", myProcID + 1 + i, myProcID);
-          MPI_Send(&myProcID, 1, MPI_INT, myProcID + i + 1, 0, MPI_COMM_WORLD);
-      //printf("sent!\n");
-      }
-  }
-
-  /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
+ /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
      and Wait routines.  Use the non-blocking routines in order to get
      all the communication up and running in a safe manner.  While it
      is possible to compute on the innermost elements of the array
@@ -261,6 +275,32 @@ int main(int argc, char* argv[]) {
      number of communications up and running without waiting for
      others to complete. */
 
+    // receives
+    MPI_Request requests[100];
+    int request_count = 0;
+
+    // receive up
+    MPI_Irecv(&myArray[0][1], N - 1, MPI_DOUBLE, MPI_ANY_SOURCE, 0, 
+            MPI_COMM_WORLD, &requests[request_count++]); 
+    // receive below
+    MPI_Irecv(&myArray[myNumRows][1], N - 1, MPI_DOUBLE, MPI_ANY_SOURCE, 0, 
+            MPI_COMM_WORLD, &requests[request_count++]); 
+
+     // sends
+     // send up
+     int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
+     MPI_Isend(&myArray[1][1], N -1, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD, &requests[request_count++]); 
+     // send down
+     dest = (myProcID + 1) > numProcs ? 0 : myProcID + 1;
+     MPI_Isend(&myArray[myNumRows - 1][1], N -1, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD, &requests[request_count++]);
+
+    // send left
+
+    // send right
+
+    // send across
+
+    // wait
   /* TODO (step 7): Verify that the stencil seems to be progressing
      correctly, as in assignment #5. */
 
@@ -268,6 +308,7 @@ int main(int argc, char* argv[]) {
      the routine, as in assignment #5. */
 
   /* TODO (step 9): Verify that the results of the computation (output
+   *
      array, number of iterations) are the same as assignment #5 for a
      few different problem sizes and numbers of processors; be sure to
      test a case in which there are interior processes (e.g., 9, 12,
