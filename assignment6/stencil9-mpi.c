@@ -321,27 +321,33 @@ int main(int argc, char* argv[]) {
     // send corners
     //dest = (myRow != numRows - 1) ?(numCols + myProcID + 1) : myProcID + numCols+ 1 - numProcs;
     //dest = ((myCol + 1) % numCols)*numCols + ((myRow + 1) % numRows)*numRows;
-/*
+    int useCol = numCols;
+    if(myCol != 0)
+        useCol = myCol;
+    int useRow = numRows;
+    if(myRow != 0)
+        useRow = myRow;
+
     dest = (myCol + 1) % numCols + ((myRow + 1)%numRows)*(numCols);
     //printf("myprocid %d dest = %d\n", myProcID, dest);
     MPI_Isend(&myArray[myNumRows-1][myNumCols-1], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
     MPI_Irecv(&myArray[0][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = abs((myCol - 1) % numCols) + abs((myRow - 1)%numRows)*(numCols);
+    dest = ((useCol - 1) % numCols) + ((useRow - 1)%numRows)*(numCols);
     //printf("myprocid %d dest = %d\n", myProcID, dest);
     MPI_Isend(&myArray[1][1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
     MPI_Irecv(&myArray[myNumRows][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = abs(myCol - 1) % numCols + ((myRow + 1)%numRows)*(numCols);
+    dest = (useCol - 1) % numCols + ((myRow + 1)%numRows)*(numCols);
     //printf("myprocid %d dest = %d\n", myProcID, dest);
     MPI_Isend(&myArray[myNumRows-1][1], 1, MPI_DOUBLE, dest, 6, MPI_COMM_WORLD, &requests[request_count++]); 
     MPI_Irecv(&myArray[0][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 6, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = (myCol + 1) % numCols + abs((myRow - 1)%numRows)*(numCols);
+    dest = (myCol + 1) % numCols + ((useRow - 1)%numRows)*(numCols);
     //printf("myprocid %d dest = %d\n", myProcID, dest);
-    MPI_Isend(&myArray[1][myNumCols-1], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
-    MPI_Irecv(&myArray[myNumRows][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &requests[request_count++]); 
-*/
+    MPI_Isend(&myArray[1][myNumCols-1], 1, MPI_DOUBLE, dest, 7, MPI_COMM_WORLD, &requests[request_count++]); 
+    MPI_Irecv(&myArray[myNumRows][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 7, MPI_COMM_WORLD, &requests[request_count++]); 
+
     // wait
     printf("requests %d\n", request_count);
     MPI_Waitall(request_count, requests, statuses);
