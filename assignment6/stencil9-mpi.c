@@ -280,92 +280,94 @@ int main(int argc, char* argv[]) {
     MPI_Status  statuses[1000];
     int request_count = 0;
 
-    // receive up
-    MPI_Irecv(&myArray[0][1], myNumCols, MPI_DOUBLE, MPI_ANY_SOURCE, 0, 
-            MPI_COMM_WORLD, &requests[request_count++]); 
+    do {
+        // receive up
+        MPI_Irecv(&myArray[0][1], myNumCols, MPI_DOUBLE, MPI_ANY_SOURCE, 0, 
+                MPI_COMM_WORLD, &requests[request_count++]); 
 
-    // receive below
-    MPI_Irecv(&myArray[myNumRows][1], myNumCols, MPI_DOUBLE, MPI_ANY_SOURCE, 1, 
-            MPI_COMM_WORLD, &requests[request_count++]); 
+        // receive below
+        MPI_Irecv(&myArray[myNumRows][1], myNumCols, MPI_DOUBLE, MPI_ANY_SOURCE, 1, 
+                MPI_COMM_WORLD, &requests[request_count++]); 
 
-     // sends
-     // send up
-     //int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
-     int dest = (myRow != 0) ? myCol + ((myRow - 1)%numRows)*numCols : myCol + (numRows-1)*numCols;
-     //printf("up %d proc %d\n", dest, myProcID);
-     MPI_Isend(&myArray[1][1], myNumCols, MPI_DOUBLE, dest, 1, MPI_COMM_WORLD, &requests[request_count++]); 
-     // send down
-     //dest = (myProcID + 1) >= numProcs ? 0 : myProcID + 1;
-     dest = myCol + ((myRow + 1)%numRows)*numCols;
-     //printf("down %d proc%d \n", dest, myProcID);
-     MPI_Isend(&myArray[myNumRows][1], myNumCols, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD, &requests[request_count++]);
+        // sends
+        // send up
+        //int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
+        int dest = (myRow != 0) ? myCol + ((myRow - 1)%numRows)*numCols : myCol + (numRows-1)*numCols;
+        //printf("up %d proc %d\n", dest, myProcID);
+        MPI_Isend(&myArray[1][1], myNumCols, MPI_DOUBLE, dest, 1, MPI_COMM_WORLD, &requests[request_count++]); 
+        // send down
+        //dest = (myProcID + 1) >= numProcs ? 0 : myProcID + 1;
+        dest = myCol + ((myRow + 1)%numRows)*numCols;
+        //printf("down %d proc%d \n", dest, myProcID);
+        MPI_Isend(&myArray[myNumRows][1], myNumCols, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD, &requests[request_count++]);
 
-    if(numCols > 1) {
-        // send left
-        dest = (myCol != 0) ? ((myCol - 1) % numCols) + ((myRow))*(numCols) : numCols-1 + myRow*numCols ;
-        //printf("left %d myprocid %d dest = %d\n", (myCol), myProcID, dest);
-        for(int i = 1; i <= myNumRows; ++i) {
-            MPI_Isend(&myArray[i][1], 1, MPI_DOUBLE, dest, 2, MPI_COMM_WORLD, &requests[request_count++]);
-            MPI_Irecv(&myArray[i][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &requests[request_count++]);
+        if(numCols > 1) {
+            // send left
+            dest = (myCol != 0) ? ((myCol - 1) % numCols) + ((myRow))*(numCols) : numCols-1 + myRow*numCols ;
+            //printf("left %d myprocid %d dest = %d\n", (myCol), myProcID, dest);
+            for(int i = 1; i <= myNumRows; ++i) {
+                MPI_Isend(&myArray[i][1], 1, MPI_DOUBLE, dest, 2, MPI_COMM_WORLD, &requests[request_count++]);
+                MPI_Irecv(&myArray[i][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &requests[request_count++]);
+            }
+
+            // send right
+            dest = (myCol + 1) % numCols + ((myRow))*(numCols);
+            //printf("right myprocid %d dest = %d\n", myProcID, dest);
+            for(int i = 1; i <= myNumRows; ++i) {
+                MPI_Isend(&myArray[i][myNumCols-1], 1, MPI_DOUBLE, dest, 3, MPI_COMM_WORLD, &requests[request_count++]);
+                MPI_Irecv(&myArray[i][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &requests[request_count++]);
+            }
         }
 
-        // send right
-        dest = (myCol + 1) % numCols + ((myRow))*(numCols);
-        //printf("right myprocid %d dest = %d\n", myProcID, dest);
-        for(int i = 1; i <= myNumRows; ++i) {
-            MPI_Isend(&myArray[i][myNumCols-1], 1, MPI_DOUBLE, dest, 3, MPI_COMM_WORLD, &requests[request_count++]);
-            MPI_Irecv(&myArray[i][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &requests[request_count++]);
-        }
-    }
+        // send corners
+        //dest = (myRow != numRows - 1) ?(numCols + myProcID + 1) : myProcID + numCols+ 1 - numProcs;
+        //dest = ((myCol + 1) % numCols)*numCols + ((myRow + 1) % numRows)*numRows;
+        int useCol = numCols;
+        if(myCol != 0)
+            useCol = myCol;
+        int useRow = numRows;
+        if(myRow != 0)
+            useRow = myRow;
 
-    // send corners
-    //dest = (myRow != numRows - 1) ?(numCols + myProcID + 1) : myProcID + numCols+ 1 - numProcs;
-    //dest = ((myCol + 1) % numCols)*numCols + ((myRow + 1) % numRows)*numRows;
-    int useCol = numCols;
-    if(myCol != 0)
-        useCol = myCol;
-    int useRow = numRows;
-    if(myRow != 0)
-        useRow = myRow;
+        dest = (myCol + 1) % numCols + ((myRow + 1)%numRows)*(numCols);
+        //printf("myprocid %d dest = %d\n", myProcID, dest);
+        MPI_Isend(&myArray[myNumRows-1][myNumCols-1], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
+        MPI_Irecv(&myArray[0][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = (myCol + 1) % numCols + ((myRow + 1)%numRows)*(numCols);
-    //printf("myprocid %d dest = %d\n", myProcID, dest);
-    MPI_Isend(&myArray[myNumRows-1][myNumCols-1], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
-    MPI_Irecv(&myArray[0][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &requests[request_count++]); 
+        dest = ((useCol - 1) % numCols) + ((useRow - 1)%numRows)*(numCols);
+        //printf("myprocid %d dest = %d\n", myProcID, dest);
+        MPI_Isend(&myArray[1][1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
+        MPI_Irecv(&myArray[myNumRows][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = ((useCol - 1) % numCols) + ((useRow - 1)%numRows)*(numCols);
-    //printf("myprocid %d dest = %d\n", myProcID, dest);
-    MPI_Isend(&myArray[1][1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
-    MPI_Irecv(&myArray[myNumRows][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &requests[request_count++]); 
+        dest = (useCol - 1) % numCols + ((myRow + 1)%numRows)*(numCols);
+        //printf("myprocid %d dest = %d\n", myProcID, dest);
+        MPI_Isend(&myArray[myNumRows-1][1], 1, MPI_DOUBLE, dest, 6, MPI_COMM_WORLD, &requests[request_count++]); 
+        MPI_Irecv(&myArray[0][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 6, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = (useCol - 1) % numCols + ((myRow + 1)%numRows)*(numCols);
-    //printf("myprocid %d dest = %d\n", myProcID, dest);
-    MPI_Isend(&myArray[myNumRows-1][1], 1, MPI_DOUBLE, dest, 6, MPI_COMM_WORLD, &requests[request_count++]); 
-    MPI_Irecv(&myArray[0][myNumCols], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 6, MPI_COMM_WORLD, &requests[request_count++]); 
+        dest = (myCol + 1) % numCols + ((useRow - 1)%numRows)*(numCols);
+        //printf("myprocid %d dest = %d\n", myProcID, dest);
+        MPI_Isend(&myArray[1][myNumCols-1], 1, MPI_DOUBLE, dest, 7, MPI_COMM_WORLD, &requests[request_count++]); 
+        MPI_Irecv(&myArray[myNumRows][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 7, MPI_COMM_WORLD, &requests[request_count++]); 
 
-    dest = (myCol + 1) % numCols + ((useRow - 1)%numRows)*(numCols);
-    //printf("myprocid %d dest = %d\n", myProcID, dest);
-    MPI_Isend(&myArray[1][myNumCols-1], 1, MPI_DOUBLE, dest, 7, MPI_COMM_WORLD, &requests[request_count++]); 
-    MPI_Irecv(&myArray[myNumRows][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 7, MPI_COMM_WORLD, &requests[request_count++]); 
+        // wait
+        printf("requests %d\n", request_count);
+        MPI_Waitall(request_count, requests, statuses);
+    /* TODO (step 7): Verify that the stencil seems to be progressing
+       correctly, as in assignment #5. */
 
-    // wait
-    printf("requests %d\n", request_count);
-    MPI_Waitall(request_count, requests, statuses);
-  /* TODO (step 7): Verify that the stencil seems to be progressing
-     correctly, as in assignment #5. */
+    /* TODO (step 8): Use an MPI reduction to compute the termination of
+       the routine, as in assignment #5. */
+    } while(0);
 
-  /* TODO (step 8): Use an MPI reduction to compute the termination of
-     the routine, as in assignment #5. */
-
-  /* TODO (step 9): Verify that the results of the computation (output
-   *
+    /* TODO (step 9): Verify that the results of the computation (output
+     *
      array, number of iterations) are the same as assignment #5 for a
      few different problem sizes and numbers of processors; be sure to
      test a case in which there are interior processes (e.g., 9, 12,
      16, ... processes...) */
 
-  MPI_Finalize();
-  return 0;
+    MPI_Finalize();
+    return 0;
 }
 
 
