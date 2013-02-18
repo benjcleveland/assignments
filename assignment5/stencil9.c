@@ -13,15 +13,15 @@
 //
 // The logical problem size -- N x N elements
 //
-//#define N 10
-#define N 1000
+#define N 10
+//#define N 1000
 
 //
 // We'll terminate when the difference between all elements in
 // adjacent iterations is less than this value of epsilon.
 //
-//#define epsilon .01
-#define epsilon .000001
+#define epsilon .01
+//#define epsilon .000001
 
 //
 // a utility routine for printing the inner N x N elements of
@@ -155,7 +155,7 @@ int main() {
   // report results
   printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
 
-  //printArr(X);
+  printArr(X);
 
   printf("Took %d iterations to converge\n", numIters);
 }
