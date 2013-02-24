@@ -223,14 +223,8 @@ int main(int argc, char* argv[]) {
        global -> local index calculation to determine (a) which
        process(es) owns the points and (b) which array value the points
        correspond to. */
-    // TODO - clean this up so there is not so much duplication
     int i = N/4;
     int j = N/4;
-    /* int globalRowStart = (myRow != numRows -1) ? rowStart * myRow : rowStart;
-       int globalRowEnd = (myRow != 0 && myRow != numRows - 1) ? rowEnd * myRow : rowEnd;
-       int globalColStart = (myCol != numCols - 1) ? colStart * myCol : colStart;
-       int globalColEnd = (myCol != 0 && myCol != numCols -1) ? colEnd * myCol : colEnd;
-       */
     if( i >=  rowStart && i < rowEnd ) {
         if( j >= colStart && j < colEnd ) {      
             //printf("I have it! %d (%d, %d)\n", myProcID, i, j);
