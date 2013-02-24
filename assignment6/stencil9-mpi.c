@@ -91,7 +91,7 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
         //int source = (myRow -1) * numCols + (numCols-1);
         int source = myCol + (myRow-1)*numCols;
         MPI_Recv(&rec_val, 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status);
-        printf("receiving %d!\n", myProcID);
+        //printf("receiving %d!\n", myProcID);
     }
 
     for(int i = 1; i <= myNumRows; ++i) {
@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     MPI_Comm_rank(MPI_COMM_WORLD, &myProcID);
-
+    
     //
     // Arrange the numProcs processes into a virtual 2D grid (numRows x
     // numCols) and compute my logical position within it (myRow,
@@ -333,7 +333,7 @@ int main(int argc, char* argv[]) {
             for(int i = 1; i <= myNumRows; ++i) {
                 if(myCol != 0) {
                     MPI_Isend(&myArray[i][1], 1, MPI_DOUBLE, dest, 2, MPI_COMM_WORLD, &requests[request_count++]);
-                    MPI_Irecv(&myArray[i][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &requests[request_count++]);
+                    MPI_Irecv(&myArray[i][0], 1, MPI_DOUBLE, dest, 3, MPI_COMM_WORLD, &requests[request_count++]);
                 }
             }
 
@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
                 if(myCol != numCols -1)
                 {
                     MPI_Isend(&myArray[i][myNumCols], 1, MPI_DOUBLE, dest, 3, MPI_COMM_WORLD, &requests[request_count++]);
-                    MPI_Irecv(&myArray[i][myNumCols+1], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &requests[request_count++]);
+                    MPI_Irecv(&myArray[i][myNumCols+1], 1, MPI_DOUBLE, dest, 2, MPI_COMM_WORLD, &requests[request_count++]);
                 }
             }
         }
