@@ -284,13 +284,13 @@ int main(int argc, char* argv[]) {
      others to complete. */
 
     // receives
-    MPI_Request requests[1000];
-    MPI_Status  statuses[1000];
+    MPI_Request requests[2000];
+    MPI_Status  statuses[2000];
     int request_count = 0;
     int iterations;
+      //  sleep(30);
     do {
         request_count = 0;
-        sleep(30);
 // sends
         // send up
         //int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
@@ -321,7 +321,7 @@ int main(int argc, char* argv[]) {
             //printf("left %d myprocid %d dest = %d\n", (myCol), myProcID, dest);
             for(int i = 1; i <= myNumRows; ++i) {
                 if(myCol != 0) {
-                MPI_Isend(&myArray[i][1], 1, MPI_DOUBLE, dest, 2, MPI_COMM_WORLD, &requests[request_count++]);
+                    MPI_Isend(&myArray[i][1], 1, MPI_DOUBLE, dest, 2, MPI_COMM_WORLD, &requests[request_count++]);
                     MPI_Irecv(&myArray[i][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &requests[request_count++]);
                 }
             }
@@ -333,7 +333,7 @@ int main(int argc, char* argv[]) {
                 if(myCol != numCols -1)
                 {
                     MPI_Isend(&myArray[i][myNumCols], 1, MPI_DOUBLE, dest, 3, MPI_COMM_WORLD, &requests[request_count++]);
-                MPI_Irecv(&myArray[i][myNumCols+1], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &requests[request_count++]);
+                    MPI_Irecv(&myArray[i][myNumCols+1], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &requests[request_count++]);
                 }
             }
         }
@@ -445,9 +445,11 @@ int main(int argc, char* argv[]) {
         ++iterations;
 
     } while(delta > epsilon);
+ //     } while( iterations < 565);
 
     if(myProcID==0)
         printf("\n\n");
+
     MPI_Barrier(MPI_COMM_WORLD);
 //    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
@@ -469,6 +471,6 @@ int main(int argc, char* argv[]) {
     free(myArrayB);
 
     MPI_Finalize();
-    printf("proc %d done\n", myProcID);
+ //   printf("proc %d done\n", myProcID);
     return 0;
 }
