@@ -3,22 +3,23 @@
 #include <stdlib.h>
 #include "mpi.h"
 
+#include <unistd.h>
 
 //
 // The logical *global* problem size -- N x N elements; each process
 // will own a fraction of the whole.
 //
 #ifndef N
-#define N 10
-//#define N 1000
+//#define N 10
+#define N 1000
 #endif
 
 //
 // We'll terminate when the difference between all elements in
 // adjacent iterations is less than this value of epsilon.
 //
-#define epsilon .01
-//#define epsilon .000001
+//#define epsilon .01
+#define epsilon .000001
 
 // START OF PROVIDED ROUTINES (should not need to change)
 // ------------------------------------------------------------------------------
@@ -271,7 +272,7 @@ int main(int argc, char* argv[]) {
      Send/Recv calls to coordinate between the processes.  Use this
      routine to verify that your initialization is correct.
   */
-    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
+    //printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
  /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
      and Wait routines.  Use the non-blocking routines in order to get
@@ -289,6 +290,7 @@ int main(int argc, char* argv[]) {
     int iterations;
     do {
         request_count = 0;
+        sleep(30);
 // sends
         // send up
         //int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
@@ -371,18 +373,22 @@ int main(int argc, char* argv[]) {
 
         dest = (myCol + 1) + ((myRow + 1))*(numCols);
         //printf("myprocid %d dest = %d\n", myProcID, dest);
-        if(dest < numProcs)
+        if(myCol + 1 < numCols && dest < numProcs)
             MPI_Isend(&myArray[myNumRows][myNumCols], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
         dest = (myCol - 1) + ((myRow - 1))*(numCols);
-        if(dest >= 0 && dest < numProcs)
+        if(myCol - 1 >= 0 && dest >= 0 && dest < numProcs)
             MPI_Irecv(&myArray[0][0], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
 
         dest = ((myCol - 1)) + ((myRow - 1))*(numCols);
-        if(dest < numProcs && dest >= 0)
+        //if(dest < numProcs && dest >= 0)
+        //if(dest % numCols > myCol && dest < numProcs)
+        if(myCol - 1 >= 0 && dest < numProcs && dest >= 0)
             //printf("myprocid %d dest = %d\n", myProcID, dest);
             MPI_Isend(&myArray[1][1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
         dest = (myCol + 1) + ((myRow + 1))*(numCols);
-        if(dest >= 0 && dest < numProcs)
+        //if(dest >= 0 && dest < numProcs)
+        //if(dest % numCols < myCol && dest < numProcs)
+        if(myCol + 1 < numCols && dest < numProcs && dest >= 0)
             MPI_Irecv(&myArray[myNumRows+1][myNumCols+1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
 
         dest = (myCol - 1)+ ((myRow + 1))*(numCols);
@@ -410,9 +416,9 @@ int main(int argc, char* argv[]) {
 
         for(int i = 1; i <= myNumRows; ++i) {
             for(int j = 1; j <= myNumCols; ++j) {
-                myArrayB[i][j] = ((myArray[i][j]*.25) + (myArray[i+1][j] + myArray[i-1][j] + myArray[i][j+1] + 
-                            myArray[i][j-1])*.125 + (myArray[i+1][j+1] + myArray[i-1][j+1] + myArray[i-1][j-1] +
-                                myArray[i+1][j-1])*.0625);
+                myArrayB[i][j] = ((myArray[i][j]*.25) + 
+                    (myArray[i+1][j] + myArray[i-1][j] + myArray[i][j+1] + myArray[i][j-1])*.125 +
+                    (myArray[i+1][j+1] + myArray[i-1][j+1] + myArray[i-1][j-1] + myArray[i+1][j-1])*.0625);
             }
         }
         /* TODO (step 7): Verify that the stencil seems to be progressing
@@ -443,7 +449,7 @@ int main(int argc, char* argv[]) {
     if(myProcID==0)
         printf("\n\n");
     MPI_Barrier(MPI_COMM_WORLD);
-    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
+//    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
     if(myProcID == 0)
         printf("Number of iterations %d\n", iterations);
@@ -454,6 +460,15 @@ int main(int argc, char* argv[]) {
      test a case in which there are interior processes (e.g., 9, 12,
      16, ... processes...) */
 
+    // free memory
+    for(int i = 0; i < myNumRows+2; ++i) {
+        free(myArray[i]);
+        free(myArrayB[i]);
+    }
+    free(myArray);
+    free(myArrayB);
+
     MPI_Finalize();
+    printf("proc %d done\n", myProcID);
     return 0;
 }
