@@ -16,16 +16,16 @@
 // will own a fraction of the whole.
 //
 #ifndef N
-#define N 10
-//#define N 1000
+//#define N 10
+#define N 1000
 #endif
 
 //
 // We'll terminate when the difference between all elements in
 // adjacent iterations is less than this value of epsilon.
 //
-#define epsilon .01
-//#define epsilon .000001
+//#define epsilon .01
+#define epsilon .000001
 
 // START OF PROVIDED ROUTINES (should not need to change)
 // ------------------------------------------------------------------------------
@@ -426,7 +426,7 @@ int main(int argc, char* argv[]) {
         printf("\n\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, numRows, myArray );
+//    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, numRows, myArray );
 
     if(myProcID == 0)
         printf("Took %d iterations to converge\n", iterations);
