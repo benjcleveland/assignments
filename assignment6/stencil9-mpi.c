@@ -30,12 +30,12 @@
 // via numRows and numCols.
 //
 void computeGridSize(int numProcs, int* numRows, int* numCols) {
-  int guess = sqrt(numProcs);
-  while (numProcs % guess != 0) {
-    guess--;
-  }
-  *numRows = numProcs / guess;
-  *numCols = guess;
+    int guess = sqrt(numProcs);
+    while (numProcs % guess != 0) {
+        guess--;
+    }
+    *numRows = numProcs / guess;
+    *numCols = guess;
 }
 
 
@@ -45,8 +45,8 @@ void computeGridSize(int numProcs, int* numRows, int* numCols) {
 //
 //
 void computeGridPos(int me, int numRows, int numCols, int* myRow, int* myCol) {
-  *myRow = me / numCols;
-  *myCol = me % numCols;
+    *myRow = me / numCols;
+    *myCol = me % numCols;
 }
 
 // END OF PROVIDED ROUTINES (should not need to change)
@@ -73,6 +73,7 @@ void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int
 }
 
 
+// print out all the values in the 2D array to the screen
 void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows, int myNumCols, int colStart, int colEnd,int numCols,  double **myArray) {
     int         rec_val;
     MPI_Status  status;
@@ -136,92 +137,92 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
 }
 
 int main(int argc, char* argv[]) {
-  int numProcs, myProcID;
-  int numRows, numCols;
-  int myRow, myCol;
-  
-  int rowStart, rowEnd;
-  int colStart, colEnd;
-  int myNumRows, myNumCols;
+    int numProcs, myProcID;
+    int numRows, numCols;
+    int myRow, myCol;
 
-  double **myArray, **myArrayB;
-  int rec_val;
-  double delta, mydelta;
-  MPI_Status status;
+    int rowStart, rowEnd;
+    int colStart, colEnd;
+    int myNumRows, myNumCols;
 
-  delta = mydelta = 0.0;
-  //
-  // Boilerplate MPI startup -- query # processes/images and my unique ID
-  //
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myProcID);
+    double **myArray, **myArrayB;
+    int rec_val;
+    double delta, mydelta;
+    MPI_Status status;
 
-  //
-  // Arrange the numProcs processes into a virtual 2D grid (numRows x
-  // numCols) and compute my logical position within it (myRow,
-  // myCol).
-  //
-  computeGridSize(numProcs, &numRows, &numCols);
-  computeGridPos(myProcID, numRows, numCols, &myRow, &myCol);
+    delta = mydelta = 0.0;
+    //
+    // Boilerplate MPI startup -- query # processes/images and my unique ID
+    //
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myProcID);
 
-  //
-  // Sanity check that we're up and running correctly.  Feel free to
-  // disable this once you get things running.
-  //
-  //printf("Process %d of %d checking in\n"
-  //       "I am at (%d, %d) of %d x %d processes\n\n", myProcID, numProcs, 
-  //       myRow, myCol, numRows, numCols);
+    //
+    // Arrange the numProcs processes into a virtual 2D grid (numRows x
+    // numCols) and compute my logical position within it (myRow,
+    // myCol).
+    //
+    computeGridSize(numProcs, &numRows, &numCols);
+    computeGridPos(myProcID, numRows, numCols, &myRow, &myCol);
+
+    //
+    // Sanity check that we're up and running correctly.  Feel free to
+    // disable this once you get things running.
+    //
+    //printf("Process %d of %d checking in\n"
+    //       "I am at (%d, %d) of %d x %d processes\n\n", myProcID, numProcs, 
+    //       myRow, myCol, numRows, numCols);
 
 
-  /* TODO (step 1): Using your block distribution (or a
-     corrected/improved/evolved version of it) from assignment #1,
-     compute the portion of the global N x N array that this task
-     owns, using a block x block distribution */
-  computeMyBlockPart(N, numRows, myRow, &rowStart, &rowEnd); 
-  computeMyBlockPart(N, numCols, myCol, &colStart, &colEnd); 
-  printf("Process %d of %d checking in\n"
-         "I am at (%d, %d) of %d x %d processes\n"
-         "rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
-         myRow, myCol, numRows, numCols, rowStart, rowEnd, colStart, colEnd);
+    /* TODO (step 1): Using your block distribution (or a
+       corrected/improved/evolved version of it) from assignment #1,
+       compute the portion of the global N x N array that this task
+       owns, using a block x block distribution */
+    computeMyBlockPart(N, numRows, myRow, &rowStart, &rowEnd); 
+    computeMyBlockPart(N, numCols, myCol, &colStart, &colEnd); 
 
-  myNumRows = rowEnd - rowStart;
-  myNumCols = colEnd - colStart;
+    printf("Process %d of %d checking in\n"
+            "I am at (%d, %d) of %d x %d processes\n"
+            "rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
+            myRow, myCol, numRows, numCols, rowStart, rowEnd, colStart, colEnd);
 
-  /* TODO (step 2): Allocate arrays corresponding to the local portion
-     of data owned by this process -- in particular, don't allocate an
-     O(N**2) array on each process, only the portion it owns.
-     Allocate an extra row/column of data as a halo around the array
-     to store global boundary conditions and/or overlap regions/ghost
-     cells for caching neighboring processors' values, similar to what
-     was shown for the 1D 3-point stencil in class, simply in 2D. */
-  
-  // TODO -  is there a better way to do this?
-     // TODO free memory when finished
-  myArray = calloc(myNumRows+2, sizeof(*myArray));
-  for(int i = 0; i < myNumRows+2; ++i)
-      myArray[i] = calloc(myNumCols+2, sizeof(**myArray));
+    myNumRows = rowEnd - rowStart;
+    myNumCols = colEnd - colStart;
 
-  myArrayB = calloc(myNumRows+2, sizeof(*myArrayB));
-  for(int i = 0; i < myNumRows+2; ++i)
-      myArrayB[i] = calloc(myNumCols+2, sizeof(**myArrayB));
+    /* TODO (step 2): Allocate arrays corresponding to the local portion
+       of data owned by this process -- in particular, don't allocate an
+       O(N**2) array on each process, only the portion it owns.
+       Allocate an extra row/column of data as a halo around the array
+       to store global boundary conditions and/or overlap regions/ghost
+       cells for caching neighboring processors' values, similar to what
+       was shown for the 1D 3-point stencil in class, simply in 2D. */
 
-  /* TODO (step 3): Initialize the arrays to zero. */
-  // done with the calloc
+    // TODO -  is there a better way to do this?
+    myArray = calloc(myNumRows+2, sizeof(*myArray));
+    for(int i = 0; i < myNumRows+2; ++i)
+        myArray[i] = calloc(myNumCols+2, sizeof(**myArray));
 
-  /* TODO (step 4): Initialize the arrays to contain four +/-1.0
-     values, as in assignment #5.  Note that you will need to do a
-     global -> local index calculation to determine (a) which
-     process(es) owns the points and (b) which array value the points
-     correspond to. */
-     // TODO - clean this up so there is not so much duplication
-     int i = N/4;
-     int j = N/4;
+    myArrayB = calloc(myNumRows+2, sizeof(*myArrayB));
+    for(int i = 0; i < myNumRows+2; ++i)
+        myArrayB[i] = calloc(myNumCols+2, sizeof(**myArrayB));
+
+    /* TODO (step 3): Initialize the arrays to zero. */
+    // done with the calloc
+
+    /* TODO (step 4): Initialize the arrays to contain four +/-1.0
+       values, as in assignment #5.  Note that you will need to do a
+       global -> local index calculation to determine (a) which
+       process(es) owns the points and (b) which array value the points
+       correspond to. */
+    // TODO - clean this up so there is not so much duplication
+    int i = N/4;
+    int j = N/4;
     /* int globalRowStart = (myRow != numRows -1) ? rowStart * myRow : rowStart;
-     int globalRowEnd = (myRow != 0 && myRow != numRows - 1) ? rowEnd * myRow : rowEnd;
-     int globalColStart = (myCol != numCols - 1) ? colStart * myCol : colStart;
-     int globalColEnd = (myCol != 0 && myCol != numCols -1) ? colEnd * myCol : colEnd;
-    */
+       int globalRowEnd = (myRow != 0 && myRow != numRows - 1) ? rowEnd * myRow : rowEnd;
+       int globalColStart = (myCol != numCols - 1) ? colStart * myCol : colStart;
+       int globalColEnd = (myCol != 0 && myCol != numCols -1) ? colEnd * myCol : colEnd;
+       */
     if( i >=  rowStart && i < rowEnd ) {
         if( j >= colStart && j < colEnd ) {      
             //printf("I have it! %d (%d, %d)\n", myProcID, i, j);
@@ -256,42 +257,45 @@ int main(int argc, char* argv[]) {
         }
     }
 
-/*
+    /*
+       printf("Process %d of %d checking in\n"
+       "I am at (%d, %d) of %d x %d processes\n"
+       "global rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
+       myRow, myCol, numRows, numCols, globalRowStart, globalRowEnd, globalColStart, globalColEnd);
+    */
 
-  printf("Process %d of %d checking in\n"
-         "I am at (%d, %d) of %d x %d processes\n"
-         "global rows (%d - %d)\n cols (%d - %d)\n", myProcID, numProcs, 
-         myRow, myCol, numRows, numCols, globalRowStart, globalRowEnd, globalColStart, globalColEnd);
-*/
-  /* TODO (step 5): Implement a routine to sequentially print out the
-     distributed array to the console in a coordinated manner such
-     that it appears as a global whole, as we logically think of it.
-     In other words, the output of this routine should be identical to
-     that of printArr() in assignment #5, in spite of the fact that
-     the array is decomposed across a number of processes. Use
-     Send/Recv calls to coordinate between the processes.  Use this
-     routine to verify that your initialization is correct.
-  */
+    /* TODO (step 5): Implement a routine to sequentially print out the
+       distributed array to the console in a coordinated manner such
+       that it appears as a global whole, as we logically think of it.
+       In other words, the output of this routine should be identical to
+       that of printArr() in assignment #5, in spite of the fact that
+       the array is decomposed across a number of processes. Use
+       Send/Recv calls to coordinate between the processes.  Use this
+       routine to verify that your initialization is correct.
+       */
+
     //printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
- /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
-     and Wait routines.  Use the non-blocking routines in order to get
-     all the communication up and running in a safe manner.  While it
-     is possible to compute on the innermost elements of the array
-     before the communication completes, there is no reason to do so
-     -- simply use the non-blocking calls as a means of getting a
-     number of communications up and running without waiting for
-     others to complete. */
+    /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
+       and Wait routines.  Use the non-blocking routines in order to get
+       all the communication up and running in a safe manner.  While it
+       is possible to compute on the innermost elements of the array
+       before the communication completes, there is no reason to do so
+       -- simply use the non-blocking calls as a means of getting a
+       number of communications up and running without waiting for
+       others to complete. */
 
     // receives
     MPI_Request requests[2000];
     MPI_Status  statuses[2000];
     int request_count = 0;
-    int iterations;
-      //  sleep(30);
+    int iterations = 0;
+
+    //  sleep(30);
     do {
         request_count = 0;
-// sends
+        // sends
+
         // send up
         //int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
         int dest;
@@ -339,38 +343,6 @@ int main(int argc, char* argv[]) {
         }
 
         // send corners
-        //dest = (myRow != numRows - 1) ?(numCols + myProcID + 1) : myProcID + numCols+ 1 - numProcs;
-        //dest = ((myCol + 1) % numCols)*numCols + ((myRow + 1) % numRows)*numRows;
-        int useCol = numCols;
-        if(myCol != 0)
-            useCol = myCol;
-        int useRow = numRows;
-        if(myRow != 0)
-            useRow = myRow;
-/*
-        dest = (myCol + 1) % numCols + ((myRow + 1)%numRows)*(numCols);
-        //printf("myprocid %d dest = %d\n", myProcID, dest);
-        MPI_Isend(&myArray[myNumRows][myNumCols], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
-        MPI_Irecv(&myArray[0][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &requests[request_count++]); 
-
-        dest = ((useCol - 1) % numCols) + ((useRow - 1)%numRows)*(numCols);
-        //printf("myprocid %d dest = %d\n", myProcID, dest);
-        MPI_Isend(&myArray[1][1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
-        MPI_Irecv(&myArray[myNumRows+1][myNumCols+1], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &requests[request_count++]); 
-
-        dest = (useCol - 1) % numCols + ((myRow + 1)%numRows)*(numCols);
-        //printf("myprocid %d dest = %d\n", myProcID, dest);
-//        if(myCol != numCols -1)
-        MPI_Isend(&myArray[myNumRows][1], 1, MPI_DOUBLE, dest, 6, MPI_COMM_WORLD, &requests[request_count++]); 
- //       if(myCol != 0)
-        MPI_Irecv(&myArray[0][myNumCols+1], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 6, MPI_COMM_WORLD, &requests[request_count++]); 
-
-        dest = (myCol + 1) % numCols + ((useRow - 1)%numRows)*(numCols);
-        //printf("myprocid %d dest = %d\n", myProcID, dest);
-        MPI_Isend(&myArray[1][myNumCols], 1, MPI_DOUBLE, dest, 7, MPI_COMM_WORLD, &requests[request_count++]); 
-        MPI_Irecv(&myArray[myNumRows+1][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, 7, MPI_COMM_WORLD, &requests[request_count++]); 
-*/
-
         dest = (myCol + 1) + ((myRow + 1))*(numCols);
         //printf("myprocid %d dest = %d\n", myProcID, dest);
         if(myCol + 1 < numCols && dest < numProcs)
@@ -411,18 +383,24 @@ int main(int argc, char* argv[]) {
         // wait
 
         //printf("requests %d\n", request_count);
-        
+
         MPI_Waitall(request_count, requests, statuses);
 
+        // compute the stencil
         for(int i = 1; i <= myNumRows; ++i) {
             for(int j = 1; j <= myNumCols; ++j) {
                 myArrayB[i][j] = ((myArray[i][j]*.25) + 
-                    (myArray[i+1][j] + myArray[i-1][j] + myArray[i][j+1] + myArray[i][j-1])*.125 +
-                    (myArray[i+1][j+1] + myArray[i-1][j+1] + myArray[i-1][j-1] + myArray[i+1][j-1])*.0625);
+                        (myArray[i+1][j] + myArray[i-1][j] + myArray[i][j+1] + myArray[i][j-1])*.125 +
+                        (myArray[i+1][j+1] + myArray[i-1][j+1] + myArray[i-1][j-1] + myArray[i+1][j-1])*.0625);
             }
         }
+
         /* TODO (step 7): Verify that the stencil seems to be progressing
            correctly, as in assignment #5. */
+
+        /* TODO (step 8): Use an MPI reduction to compute the termination of
+           the routine, as in assignment #5. */
+        
         mydelta = 0;
         for(int i = 1; i <= myNumRows; ++i) {
             for(int j = 1; j <= myNumCols; ++j) {
@@ -432,11 +410,12 @@ int main(int argc, char* argv[]) {
                 mydelta = fmax(mydelta, tmp_d);                
             }
         }
+
+        // Compute the reduction
         MPI_Allreduce(&mydelta, &delta, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         //printf("current delta %lf %lf\n", delta, mydelta);
 
-        /* TODO (step 8): Use an MPI reduction to compute the termination of
-           the routine, as in assignment #5. */
+        // copy arrayB back to the other array
         for(int i = 1; i <= myNumRows; ++i) {
             for(int j = 1; j <= myNumCols; ++j) {
                 myArray[i][j] = myArrayB[i][j];
@@ -445,16 +424,15 @@ int main(int argc, char* argv[]) {
         ++iterations;
 
     } while(delta > epsilon);
- //     } while( iterations < 565);
 
     if(myProcID==0)
         printf("\n\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-//    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
+    //printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
     if(myProcID == 0)
-        printf("Number of iterations %d\n", iterations);
+        printf("Took %d iterations to converge\n", iterations);
     /* TODO (step 9): Verify that the results of the computation (output
      *
      array, number of iterations) are the same as assignment #5 for a
@@ -471,6 +449,5 @@ int main(int argc, char* argv[]) {
     free(myArrayB);
 
     MPI_Finalize();
- //   printf("proc %d done\n", myProcID);
     return 0;
 }
