@@ -145,8 +145,10 @@ int main(int argc, char* argv[]) {
 
   double **myArray, **myArrayB;
   int rec_val;
+  double delta, mydelta;
   MPI_Status status;
 
+  delta = mydelta = 0.0;
   //
   // Boilerplate MPI startup -- query # processes/images and my unique ID
   //
@@ -415,6 +417,17 @@ int main(int argc, char* argv[]) {
         }
         /* TODO (step 7): Verify that the stencil seems to be progressing
            correctly, as in assignment #5. */
+        mydelta = 0;
+        for(int i = 1; i <= myNumRows; ++i) {
+            for(int j = 1; j <= myNumCols; ++j) {
+                double tmp_d = fabs(myArray[i][j] - myArrayB[i][j]);
+                //if(tmp_d != 0)
+                //    printf("tmp = %li %li %li\n", tmp_d, myArray[i][j], myArrayB[i][j]);
+                mydelta = fmax(mydelta, tmp_d);                
+            }
+        }
+        MPI_Allreduce(&mydelta, &delta, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        //printf("current delta %lf %lf\n", delta, mydelta);
 
         /* TODO (step 8): Use an MPI reduction to compute the termination of
            the routine, as in assignment #5. */
@@ -424,7 +437,9 @@ int main(int argc, char* argv[]) {
             }
         }
         ++iterations;
-    } while(iterations < 7);
+
+    } while(delta > epsilon);
+
     if(myProcID==0)
         printf("\n\n");
     MPI_Barrier(MPI_COMM_WORLD);
