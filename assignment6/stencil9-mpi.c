@@ -1,3 +1,9 @@
+/*
+ * Ben Cleveland
+ * CSE P 524
+ * Assignment 6
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,16 +16,16 @@
 // will own a fraction of the whole.
 //
 #ifndef N
-//#define N 10
-#define N 1000
+#define N 10
+//#define N 1000
 #endif
 
 //
 // We'll terminate when the difference between all elements in
 // adjacent iterations is less than this value of epsilon.
 //
-//#define epsilon .01
-#define epsilon .000001
+#define epsilon .01
+//#define epsilon .000001
 
 // START OF PROVIDED ROUTINES (should not need to change)
 // ------------------------------------------------------------------------------
@@ -82,7 +88,8 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
     if(myRow != 0) {
         // wait for a signal
         //printf("waiting...! %d\n", myProcID);
-        MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+        int source = (myRow -1) * numCols + (numCols-1);
+        MPI_Recv(&rec_val, 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status);
         //printf("receiving %d!\n", myProcID);
     }
 
@@ -105,8 +112,10 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
             if(colStart == 0)
                 rec_val = myProcID;
             MPI_Send(&rec_val, 1, MPI_INT, myProcID + 1, 1, MPI_COMM_WORLD);
-            if(colStart == 0) 
-                MPI_Recv(&rec_val, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+            if(colStart == 0) {
+                int source = (myRow)*numCols + (numCols-1);
+                MPI_Recv(&rec_val, 1, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
+            }
             //printf("moving on %d\n", myProcID);
             // wait for the next row
         } else {
@@ -352,23 +361,17 @@ int main(int argc, char* argv[]) {
             MPI_Irecv(&myArray[0][0], 1, MPI_DOUBLE, dest, 4, MPI_COMM_WORLD, &requests[request_count++]); 
 
         dest = ((myCol - 1)) + ((myRow - 1))*(numCols);
-        //if(dest < numProcs && dest >= 0)
-        //if(dest % numCols > myCol && dest < numProcs)
         if(myCol - 1 >= 0 && dest < numProcs && dest >= 0)
             //printf("myprocid %d dest = %d\n", myProcID, dest);
             MPI_Isend(&myArray[1][1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
         dest = (myCol + 1) + ((myRow + 1))*(numCols);
-        //if(dest >= 0 && dest < numProcs)
-        //if(dest % numCols < myCol && dest < numProcs)
         if(myCol + 1 < numCols && dest < numProcs && dest >= 0)
             MPI_Irecv(&myArray[myNumRows+1][myNumCols+1], 1, MPI_DOUBLE, dest, 5, MPI_COMM_WORLD, &requests[request_count++]); 
 
         dest = (myCol - 1)+ ((myRow + 1))*(numCols);
         //printf("myprocid %d dest = %d\n", myProcID, dest);
-        //        if(myCol != numCols -1)
         if(dest % numCols < myCol  && dest< numProcs)
             MPI_Isend(&myArray[myNumRows][1], 1, MPI_DOUBLE, dest, 6, MPI_COMM_WORLD, &requests[request_count++]); 
-        //       if(myCol != 0)
         dest = (myCol + 1)+ ((myRow - 1))*(numCols);
         if(dest % numCols > myCol  && dest< numProcs)
             MPI_Irecv(&myArray[0][myNumCols+1], 1, MPI_DOUBLE, dest, 6, MPI_COMM_WORLD, &requests[request_count++]); 
@@ -380,10 +383,10 @@ int main(int argc, char* argv[]) {
         dest = (myCol - 1) + ((myRow + 1))*(numCols);
         if(dest %numCols < myCol  && dest< numProcs)
             MPI_Irecv(&myArray[myNumRows+1][0], 1, MPI_DOUBLE, dest, 7, MPI_COMM_WORLD, &requests[request_count++]); 
-        // wait
 
         //printf("requests %d\n", request_count);
 
+        // wait for all the requests
         MPI_Waitall(request_count, requests, statuses);
 
         // compute the stencil
@@ -398,9 +401,10 @@ int main(int argc, char* argv[]) {
         /* TODO (step 7): Verify that the stencil seems to be progressing
            correctly, as in assignment #5. */
 
+        // done manually
+
         /* TODO (step 8): Use an MPI reduction to compute the termination of
            the routine, as in assignment #5. */
-        
         mydelta = 0;
         for(int i = 1; i <= myNumRows; ++i) {
             for(int j = 1; j <= myNumCols; ++j) {
@@ -421,6 +425,7 @@ int main(int argc, char* argv[]) {
                 myArray[i][j] = myArrayB[i][j];
             }
         }
+        // increment the number of iterations
         ++iterations;
 
     } while(delta > epsilon);
@@ -429,16 +434,19 @@ int main(int argc, char* argv[]) {
         printf("\n\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-    //printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
+    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
 
     if(myProcID == 0)
         printf("Took %d iterations to converge\n", iterations);
+
     /* TODO (step 9): Verify that the results of the computation (output
      *
      array, number of iterations) are the same as assignment #5 for a
      few different problem sizes and numbers of processors; be sure to
      test a case in which there are interior processes (e.g., 9, 12,
      16, ... processes...) */
+
+    // IT WORKS!!
 
     // free memory
     for(int i = 0; i < myNumRows+2; ++i) {
