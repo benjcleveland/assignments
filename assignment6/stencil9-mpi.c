@@ -80,7 +80,7 @@ void computeMyBlockPart(int numItems, int numTasks, int myTaskID, int *myLo, int
 
 
 // print out all the values in the 2D array to the screen
-void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows, int myNumCols, int colStart, int colEnd,int numCols,  double **myArray) {
+void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows, int myNumCols, int colStart, int colEnd, int numCols, int numRows, double **myArray) {
     int         rec_val;
     MPI_Status  status;
 
@@ -88,9 +88,10 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
     if(myRow != 0) {
         // wait for a signal
         //printf("waiting...! %d\n", myProcID);
-        int source = (myRow -1) * numCols + (numCols-1);
+        //int source = (myRow -1) * numCols + (numCols-1);
+        int source = myCol + (myRow-1)*numCols;
         MPI_Recv(&rec_val, 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status);
-        //printf("receiving %d!\n", myProcID);
+        printf("receiving %d!\n", myProcID);
     }
 
     for(int i = 1; i <= myNumRows; ++i) {
@@ -114,7 +115,7 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
             MPI_Send(&rec_val, 1, MPI_INT, myProcID + 1, 1, MPI_COMM_WORLD);
             if(colStart == 0) {
                 int source = (myRow)*numCols + (numCols-1);
-                MPI_Recv(&rec_val, 1, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
+                MPI_Recv(&rec_val, 1, MPI_INT, source, 2, MPI_COMM_WORLD, &status);
             }
             //printf("moving on %d\n", myProcID);
             // wait for the next row
@@ -123,19 +124,17 @@ void printArray( int myProcID, int numProcs, int myRow, int myCol, int myNumRows
             fclose(fp);
             if(colStart != 0) {
                 //printf("newline %d %d\n", myProcID, rec_val);
-                MPI_Send(&myProcID, 1, MPI_INT, rec_val, 1, MPI_COMM_WORLD);
+                MPI_Send(&myProcID, 1, MPI_INT, rec_val, 2, MPI_COMM_WORLD);
                 //printf("newline sent %d\n", myProcID);
             }
         }
     }
-    // if we are done writing all of our rows go to the next proc
-    if(myProcID + 1 < numProcs && colEnd == N ) {
-        for(int i = 0; i < numCols; ++i) {
-            //printf("sending! %d %d\n", myProcID + 1 + i, myProcID);
-            MPI_Send(&myProcID, 1, MPI_INT, myProcID + i + 1, 0, MPI_COMM_WORLD);
-            //printf("sent!\n");
-        }
+
+    if(myRow + 1 < numRows) {// signal the next row to start
+        int dest = myCol + (myRow+1)*numCols;
+        MPI_Send(&myProcID, 1, MPI_INT, dest, 0, MPI_COMM_WORLD);
     }
+
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -283,7 +282,7 @@ int main(int argc, char* argv[]) {
        routine to verify that your initialization is correct.
        */
 
-    //printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
+    //printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, numRows, myArray );
 
     /* TODO (step 6): Implement the 9-point stencil using ISend/IRecv
        and Wait routines.  Use the non-blocking routines in order to get
@@ -305,32 +304,31 @@ int main(int argc, char* argv[]) {
         request_count = 0;
         // sends
 
-        // send up
-        //int dest = (myProcID == 0 ) ? numProcs - 1 : myProcID - 1;
         int dest;
         if(myRow != 0) {
-            int dest = (myRow != 0) ? myCol + ((myRow - 1)%numRows)*numCols : myCol + (numRows-1)*numCols;
+            dest = myCol + (myRow - 1)*numCols; 
             //printf("up %d proc %d\n", dest, myProcID);
+            // send up
             MPI_Isend(&myArray[1][1], myNumCols, MPI_DOUBLE, dest, 1, MPI_COMM_WORLD, &requests[request_count++]); 
             // receive up
-            MPI_Irecv(&myArray[0][1], myNumCols, MPI_DOUBLE, MPI_ANY_SOURCE, 0, 
-                    MPI_COMM_WORLD, &requests[request_count++]); 
+            MPI_Irecv(&myArray[0][1], myNumCols, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD, &requests[request_count++]); 
         }
-        // send down
-        //dest = (myProcID + 1) >= numProcs ? 0 : myProcID + 1;
+
         if(myRow != numRows -1) {
-            dest = myCol + ((myRow + 1)%numRows)*numCols;
+            dest = myCol + (myRow + 1)*numCols;
             //printf("down %d proc%d \n", dest, myProcID);
+            // send down
             MPI_Isend(&myArray[myNumRows][1], myNumCols, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD, &requests[request_count++]);
 
             // receive below
-            MPI_Irecv(&myArray[myNumRows+1][1], myNumCols, MPI_DOUBLE, MPI_ANY_SOURCE, 1, 
-                    MPI_COMM_WORLD, &requests[request_count++]); 
+            MPI_Irecv(&myArray[myNumRows+1][1], myNumCols, MPI_DOUBLE, dest, 1, MPI_COMM_WORLD, &requests[request_count++]); 
 
         }
+
         if(numCols > 1) {
             // send left
-            dest = (myCol != 0) ? ((myCol - 1) % numCols) + ((myRow))*(numCols) : numCols-1 + myRow*numCols ;
+            //dest = (myCol != 0) ? ((myCol - 1) % numCols) + ((myRow))*(numCols) : numCols-1 + myRow*numCols ;
+            dest = (myCol -1) + (myRow*numCols); 
             //printf("left %d myprocid %d dest = %d\n", (myCol), myProcID, dest);
             for(int i = 1; i <= myNumRows; ++i) {
                 if(myCol != 0) {
@@ -340,7 +338,7 @@ int main(int argc, char* argv[]) {
             }
 
             // send right
-            dest = (myCol + 1) % numCols + ((myRow))*(numCols);
+            dest = (myCol + 1) + (myRow*numCols);
             //printf("right myprocid %d dest = %d\n", myProcID, dest);
             for(int i = 1; i <= myNumRows; ++i) {
                 if(myCol != numCols -1)
@@ -434,7 +432,7 @@ int main(int argc, char* argv[]) {
         printf("\n\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, myArray );
+    printArray(myProcID, numProcs, myRow, myCol, myNumRows, myNumCols, colStart, colEnd, numCols, numRows, myArray );
 
     if(myProcID == 0)
         printf("Took %d iterations to converge\n", iterations);
