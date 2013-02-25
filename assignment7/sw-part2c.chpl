@@ -18,7 +18,6 @@
 
 
 
-
 //
 // standard modules for IO and the Block Distribution
 //
@@ -227,7 +226,7 @@ proc computeMatrixInParallel() {
   // may need to use a non-strided array for the bounding box and
   // a strided one for the domain itself.
   //
-  var chunkDomain = {1..seq1len, 0..#numLocales};
+  var chunkDomain = {1..seq1len by rowsPerChunk, 0..#numLocales};
   var chunkSpace = chunkDomain dmapped Block(boundingBox={1..seq1len, 0..#numLocales}, targetLocales=taskLocs);
   var ChunkReady$ : [chunkSpace] sync int;
 
@@ -254,7 +253,7 @@ proc computeMatrixInParallel() {
   // conditions which are ready to go.
   //
 
-  ChunkReady$[1..,0] = 0;
+  ChunkReady$[1.. by rowsPerChunk,0] = 0;
 
   //
   // TODO #5: Create a task per locale running on that locale
@@ -276,7 +275,7 @@ proc computeMatrixInParallel() {
       // TODO #6: Set up the appropriate control flow to iterate over
       // our rows a chunk at a time when it is safe to do so as
       // indicated by ChunkReady$.  
-      for i in 1..seq1len {
+      for i in 1..seq1len by rowsPerChunk {
         var rd = ChunkReady$[i,here.id];
         // TODO #7: 
         // Compute the indices of the next chunk that this particular
@@ -287,7 +286,11 @@ proc computeMatrixInParallel() {
         // description of this task's next chunk).
         //
         //writeln("my cols ", myCols, " myChunk", myChunk);
-        const myNextChunk = {i..i, myCols};//myChunk;
+        var end = i + rowsPerChunk;
+        if(end > seq1len) {
+            end = seq1len;
+        }
+        const myNextChunk = {i..end, myCols};//myChunk;
 
         //
         // This is just a debug print -- remove it once you're up
@@ -451,3 +454,6 @@ proc printSeqWithInsertions(path, pathLen, seq, seqnum) {
   }
   writeln();
 }
+
+
+
