@@ -259,8 +259,8 @@ proc computeMatrixInParallel() {
   // TODO #5: Create a task per locale running on that locale
   //
 
-  coforall loc in taskLocs {
-    on loc do {
+  //coforall loc in taskLocs {
+  //  on loc do {
       //
       // Compute the chunk of the distributed pathMatrix that we own
       // and the columns of that chunk.  These use a helper routine,
@@ -276,7 +276,6 @@ proc computeMatrixInParallel() {
       // our rows a chunk at a time when it is safe to do so as
       // indicated by ChunkReady$.  
       for i in 1..seq1len by rowsPerChunk {
-        var rd = ChunkReady$[i,here.id];
         // TODO #7: 
         // Compute the indices of the next chunk that this particular
         // task can safely compute serially at this time.  (NOTE: The
@@ -285,12 +284,11 @@ proc computeMatrixInParallel() {
         // without modifications.  Replace it with a correct
         // description of this task's next chunk).
         //
-        //writeln("my cols ", myCols, " myChunk", myChunk);
+        writeln("my cols ", myCols, " myChunk", myChunk);
         var end = i + rowsPerChunk;
         if(end > seq1len) {
             end = seq1len;
         }
-        const myNextChunk = {i..end, myCols};//myChunk;
 
         //
         // This is just a debug print -- remove it once you're up
@@ -300,19 +298,30 @@ proc computeMatrixInParallel() {
         //
         // Compute the matrix corresponding to my next chunk serially
         //
-        computeChunkSerially(H, pathMatrix, myNextChunk);
-
+        coforall loc in taskLocs {
+            on loc do {
+                var rd = ChunkReady$[i,here.id];
+                const myChunk = pathMatrix.getMyChunk();
+                const myCols = myChunk.dim(2);
+                const myNextChunk = {i..end, myCols};//myChunk;
+                writeln("Locale ", here.id, " computing ", myNextChunk);
+                computeChunkSerially(H, pathMatrix, myNextChunk);
+                if( here.id +1 < numLocales) { 
+                    ChunkReady$[i, here.id+1] = 0;
+                }
+            }
+        }
         //
         // TODO #8:
         // Signal that the next locale can now start at this same row
         // since its chunk was dependent on ours.
         // And that should be it!
         //
-        if( here.id +1 < numLocales) { 
-            ChunkReady$[i, here.id+1] = 0;
-        }
-      }
-    }
+       // if( here.id +1 < numLocales) { 
+       //     ChunkReady$[i, here.id+1] = 0;
+       // }
+    //  }
+   // }
   }
   // ...join tasks...
 
