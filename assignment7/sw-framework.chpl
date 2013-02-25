@@ -143,11 +143,7 @@ proc computeMatrixInParallel() {
   // 9-point stencil framework in MPI.
   //
   // TODO - I'm not sure if this is correct
- // var taskLocs = Locales[0..#numLocales[0..1];
-  //var taskLocs = Locales.reshape({0..#1, 0..#numLocales});
-  //var taskLocs = Locales[0..#numLocales];
   var taskLocs = reshape(Locales, {0..#1, 0..#numLocales});
-  writeln("num locals", numLocales, taskLocs.rank);
 
   //
   // Declare a local and distributed HSpace domain
@@ -210,7 +206,7 @@ proc computeMatrixInParallel() {
   // may need to use a non-strided array for the bounding box and
   // a strided one for the domain itself.
   //
-  var chunkDomain = {1..seq1len by seq2len , 0..#numLocales};
+  var chunkDomain = {1..seq1len, 0..#numLocales};
   var chunkSpace = chunkDomain dmapped Block(boundingBox={1..seq1len, 0..#numLocales}, targetLocales=taskLocs);
   var ChunkReady$ : [chunkSpace] sync int;
 
@@ -237,7 +233,7 @@ proc computeMatrixInParallel() {
   // conditions which are ready to go.
   //
 
-//  ChunkReady$[1,1] = 0;
+  ChunkReady$[1..,0] = 0;
 
   //
   // TODO #5: Create a task per locale running on that locale
@@ -256,11 +252,11 @@ proc computeMatrixInParallel() {
       const myChunk = pathMatrix.getMyChunk();
       const myCols = myChunk.dim(2);
 
-      writeln("my cols ", myCols, " myChunk", myChunk);
       // TODO #6: Set up the appropriate control flow to iterate over
       // our rows a chunk at a time when it is safe to do so as
       // indicated by ChunkReady$.  
-
+      for i in 1..seq1len {
+        var rd = ChunkReady$[i,here.id];
         // TODO #7: 
         // Compute the indices of the next chunk that this particular
         // task can safely compute serially at this time.  (NOTE: The
@@ -269,14 +265,14 @@ proc computeMatrixInParallel() {
         // without modifications.  Replace it with a correct
         // description of this task's next chunk).
         //
-        const myNextChunk = myChunk;
+        //writeln("my cols ", myCols, " myChunk", myChunk);
+        const myNextChunk = {i..i, myCols};//myChunk;
 
         //
         // This is just a debug print -- remove it once you're up
         // and running
         //
-          writeln("Locale ", here.id, " computing ", myNextChunk);
-
+        //  writeln("Locale ", here.id, " computing ", myNextChunk);
         //
         // Compute the matrix corresponding to my next chunk serially
         //
@@ -288,6 +284,10 @@ proc computeMatrixInParallel() {
         // since its chunk was dependent on ours.
         // And that should be it!
         //
+        if( here.id +1 < numLocales) { 
+            ChunkReady$[i, here.id+1] = 0;
+        }
+      }
     }
   }
   // ...join tasks...
