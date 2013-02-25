@@ -147,7 +147,7 @@ proc computeMatrixInParallel() {
   //var taskLocs = Locales.reshape({0..#1, 0..#numLocales});
   //var taskLocs = Locales[0..#numLocales];
   var taskLocs = reshape(Locales, {0..#1, 0..#numLocales});
-  writeln("num locals", numLocales, taskLocs.rank, " ", test.rank); 
+  writeln("num locals", numLocales, taskLocs.rank);
 
   //
   // Declare a local and distributed HSpace domain
@@ -210,7 +210,9 @@ proc computeMatrixInParallel() {
   // may need to use a non-strided array for the bounding box and
   // a strided one for the domain itself.
   //
-
+  var chunkDomain = {1..seq1len by seq2len , 0..#numLocales};
+  var chunkSpace = chunkDomain dmapped Block(boundingBox={1..seq1len, 0..#numLocales}, targetLocales=taskLocs);
+  var ChunkReady$ : [chunkSpace] sync int;
 
   //
   // Here's another debugging routine that you can enable once you've
@@ -219,13 +221,13 @@ proc computeMatrixInParallel() {
   // reads them all, leaving them empty again.
   //
 
-  /*
+  
   if debugDistributions {
     forall b in ChunkReady$ do
       b = here.id;
     writeln("\nChunkReady$ is distributed as follows:\n", ChunkReady$);
   }
-  */
+  
 
   //
   // TODO #4:
@@ -235,12 +237,14 @@ proc computeMatrixInParallel() {
   // conditions which are ready to go.
   //
 
+//  ChunkReady$[1,1] = 0;
 
   //
   // TODO #5: Create a task per locale running on that locale
   //
 
-
+  coforall loc in taskLocs {
+    on loc do {
       //
       // Compute the chunk of the distributed pathMatrix that we own
       // and the columns of that chunk.  These use a helper routine,
@@ -252,10 +256,10 @@ proc computeMatrixInParallel() {
       const myChunk = pathMatrix.getMyChunk();
       const myCols = myChunk.dim(2);
 
+      writeln("my cols ", myCols, " myChunk", myChunk);
       // TODO #6: Set up the appropriate control flow to iterate over
       // our rows a chunk at a time when it is safe to do so as
       // indicated by ChunkReady$.  
-
 
         // TODO #7: 
         // Compute the indices of the next chunk that this particular
@@ -284,7 +288,8 @@ proc computeMatrixInParallel() {
         // since its chunk was dependent on ours.
         // And that should be it!
         //
-
+    }
+  }
   // ...join tasks...
 
   //
