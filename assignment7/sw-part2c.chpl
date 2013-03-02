@@ -260,6 +260,7 @@ proc computeMatrixInParallel() {
   // TODO #5: Create a task per locale running on that locale
   //
 
+  // PART C removed coforall
   //coforall loc in taskLocs {
   //  on loc do {
       //
@@ -270,66 +271,56 @@ proc computeMatrixInParallel() {
       // pathMatrix is distributed.  It will return the 2D domain
       // describing that locale's subdomain of pathMatrix.
       //
-      const myChunk = pathMatrix.getMyChunk();
-      const myCols = myChunk.dim(2);
+      // PART C removed
+      //const myChunk = pathMatrix.getMyChunk();
+      //const myCols = myChunk.dim(2);
 
       // TODO #6: Set up the appropriate control flow to iterate over
       // our rows a chunk at a time when it is safe to do so as
       // indicated by ChunkReady$.  
+      
+      // PART C added sync
       sync{
-      for i in 1..seq1len by rowsPerChunk {
-        // TODO #7: 
-        // Compute the indices of the next chunk that this particular
-        // task can safely compute serially at this time.  (NOTE: The
-        // assignment of 'myChunk' here is just a placeholder
-        // assignment, for the sake of making the framework compile
-        // without modifications.  Replace it with a correct
-        // description of this task's next chunk).
-        //
-        //writeln("my cols ", myCols, " myChunk", myChunk);
-        var end = i + rowsPerChunk;
-        if(end > seq1len) {
-            end = seq1len;
-        }
+          for i in 1..seq1len by rowsPerChunk {
+              // TODO #7: 
+              // Compute the indices of the next chunk that this particular
+              // task can safely compute serially at this time.  (NOTE: The
+              // assignment of 'myChunk' here is just a placeholder
+              // assignment, for the sake of making the framework compile
+              // without modifications.  Replace it with a correct
+              // description of this task's next chunk).
+              //
+              //writeln("my cols ", myCols, " myChunk", myChunk);
+              var end = i + rowsPerChunk;
+              if(end > seq1len) {
+                  end = seq1len;
+              }
 
-        //
-        // This is just a debug print -- remove it once you're up
-        // and running
-        //
-        //  writeln("Locale ", here.id, " computing ", myNextChunk);
-        //
-        // Compute the matrix corresponding to my next chunk serially
-        //
+              //
+              // This is just a debug print -- remove it once you're up
+              // and running
+              //
+              //  writeln("Locale ", here.id, " computing ", myNextChunk);
+              //
+              // Compute the matrix corresponding to my next chunk serially
+              //
 
-        const rows = {i..end};
-        computeChunkRecursive(taskLocs, H, pathMatrix, i, end, ChunkReady$);
-        //coforall loc in taskLocs {
-        /*for loc in taskLocs {
-            begin on loc do {
-                var rd = ChunkReady$[i,here.id];
-                const myChunk = pathMatrix.getMyChunk();
-                const myCols = myChunk.dim(2);
-                const myNextChunk = {i..end, myCols};//myChunk;
-                writeln("Locale ", here.id, " computing ", myNextChunk);
-                computeChunkSerially(H, pathMatrix, myNextChunk);
-                if( here.id +1 < numLocales) { 
-                    ChunkReady$[i, here.id+1] = 0;
-                }
-            }
+              const rows = {i..end};
+
+              // PART C added computeChunkRecursive
+              computeChunkRecursive(taskLocs, H, pathMatrix, i, end, ChunkReady$);
+
+              //
+              // TODO #8:
+              // Signal that the next locale can now start at this same row
+              // since its chunk was dependent on ours.
+              // And that should be it!
+              
+              // PART C - removed
+              // if( here.id +1 < numLocales) { 
+              //     ChunkReady$[i, here.id+1] = 0;
+              // }
         }
-        */
-        //
-        // TODO #8:
-        // Signal that the next locale can now start at this same row
-        // since its chunk was dependent on ours.
-        // And that should be it!
-        //
-       // if( here.id +1 < numLocales) { 
-       //     ChunkReady$[i, here.id+1] = 0;
-       // }
-    //  }
-   // }
-  }
   }
   // ...join tasks...
 
@@ -339,25 +330,30 @@ proc computeMatrixInParallel() {
   printResults(H, pathMatrix);
 }
 
+// PART C
+// Compute the chunk on the current local for the given rows
+// when finished spawn a task on the next locale to compute the next
+// set of columns in the row
 proc computeChunkRecursive(taskLocs, H, pathMatrix, i, end, ChunkReady$) {
+    const myChunk = pathMatrix.getMyChunk();
+    const myCols = myChunk.dim(2);
+    const myNextChunk = {i..end, myCols};//myChunk;
 
-    if( here.id >= numLocales ) {
-       return; 
+    writeln("Locale ", here.id, " computing ", myNextChunk);
+    
+    // make sure the rows above us have finished
+    var rd = ChunkReady$[i,here.id];
+    computeChunkSerially(H, pathMatrix, myNextChunk);
+
+    // tell the row below us it can go
+    if(i + rowsPerChunk < seq1len) {
+        ChunkReady$[i+rowsPerChunk, here.id] = 0;
     }
-    else {
-        const myChunk = pathMatrix.getMyChunk();
-        const myCols = myChunk.dim(2);
-        const myNextChunk = {i..end, myCols};//myChunk;
-        writeln("Locale ", here.id, " computing ", myNextChunk);
-        var rd = ChunkReady$[i,here.id];
-        computeChunkSerially(H, pathMatrix, myNextChunk);
-        if(i + rowsPerChunk < seq1len) {
-            ChunkReady$[i+rowsPerChunk, here.id] = 0;
-        }
-        if(here.id +1 < numLocales) {
+
+    // start the next set of columns on the next local (if we aren't the end)
+    if(here.id +1 < numLocales) {
         begin on taskLocs[0,here.id +1] do {
             computeChunkRecursive(taskLocs,H, pathMatrix, i, end, ChunkReady$);
-        }
         }
     }
 }

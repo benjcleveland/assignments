@@ -434,6 +434,3 @@ proc printSeqWithInsertions(path, pathLen, seq, seqnum) {
   }
   writeln();
 }
-
-
-
