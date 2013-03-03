@@ -1,3 +1,9 @@
+/*
+ Ben Cleveland
+ CSE P 524
+ Assignment 7
+*/
+
 //
 // standard modules for IO and the Block Distribution
 //

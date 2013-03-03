@@ -1,4 +1,8 @@
-
+/*
+ Ben Cleveland
+ CSE P 524
+ Assignment 7
+*/
 
 //
 // says whether to compute the matrix serially or in parallel.
