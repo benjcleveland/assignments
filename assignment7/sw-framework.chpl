@@ -276,7 +276,7 @@ proc computeMatrixInParallel() {
         // This is just a debug print -- remove it once you're up
         // and running
         //
-          writeln("Locale ", here.id, " computing ", myNextChunk);
+        //  writeln("Locale ", here.id, " computing ", myNextChunk);
         //
         // Compute the matrix corresponding to my next chunk serially
         //
