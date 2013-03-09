@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
+#include <accel.h>
 
 // distribution types
 typedef enum distribution
@@ -84,7 +85,55 @@ void* computeThread(task_t *task)
     {
         // do the Negate computation
         //for(i = my_lo; i < my_hi; i += stride)
-        #pragma acc parallel copy(data[0:items])
+        #pragma acc kernels loop
+        for(i = 0; i < items; ++i)
+            data[i] = -data[i];
+    }
+    else // compute factorial
+    {
+        int64_t factorial;
+        //for(i = my_lo; i < my_hi; i += stride)
+        #pragma acc kernels loop copy(data[0:items])
+        for(i = 0; i < items; ++i)
+        {   
+            factorial = 1;
+            for(j = 1; j <= data[i]; ++j)
+                factorial *= j;
+            data[i] = factorial;
+        }
+    }
+
+    // finish
+    return NULL;
+}
+
+void* computeThreadHost(task_t *task)
+{
+    // cast arg
+    options_t   *ops = task->ops;
+    int64_t         i, j;
+    int         items = ops->num_items;
+    int         my_lo, my_hi;
+    int64_t     *data = ops->data;
+
+    // determine compute part
+ /*   if(ops->distribution == BLOCK)
+    {
+        computeMyBlockPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
+        stride = 1;
+    }
+    else 
+    {
+        computeMyCyclicPart(ops->num_items, ops->num_tasks, task->task_id, &my_lo, &my_hi); 
+        stride = ops->num_tasks;
+    }
+*/
+    //printf("thread %d lo %d, hi %d\n", task->task_id, my_lo, my_hi); 
+
+    if(ops->operation == NEGATE)
+    {
+        // do the Negate computation
+        //for(i = my_lo; i < my_hi; i += stride)
         for(i = 0; i < items; ++i)
             data[i] = -data[i];
     }
@@ -200,6 +249,8 @@ int main(int argc, char **argv)
     ops.distribution = BLOCK;
     ops.operation = NEGATE;
     input_deck = RANDOM;
+    
+    acc_init( acc_device_nvidia );
 
     // get options
     if( get_options(argc, argv, &ops.operation, &ops.distribution, &input_deck, &ops.num_tasks, &ops.num_items, &max_value) == -1)
@@ -266,7 +317,23 @@ int main(int argc, char **argv)
     timespec_diff(start_time, end_time, &diff_time);
 
     // report results
-    printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+    printf("Overall time Accel: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+
+    // start timer
+    if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
+        perror("Error from clock_gettime - getting start time!\n");
+
+    tasks[0].ops = &ops;
+    computeThreadHost(&tasks[0]);
+
+    // stop timer
+    if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
+        perror("Error from clock_gettime - getting end time!\n");
+
+    timespec_diff(start_time, end_time, &diff_time);
+
+    // report results
+    printf("Overall time Host: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
     //for(i = 0; i < ops.num_items; ++i)
     //    printf("%li", ops.data[i]);
     // cleanup memory
