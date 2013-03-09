@@ -62,8 +62,9 @@ void* computeThread(task_t *task)
     // cast arg
     options_t   *ops = task->ops;
     int64_t         i, j;
-    int         stride;
+    int         items = ops->num_items;
     int         my_lo, my_hi;
+    int64_t     *data = ops->data;
 
     // determine compute part
  /*   if(ops->distribution == BLOCK)
@@ -83,9 +84,9 @@ void* computeThread(task_t *task)
     {
         // do the Negate computation
         //for(i = my_lo; i < my_hi; i += stride)
-        #pragma acc parallel
-        for(i = 0; i < ops->num_items; ++i)
-            ops->data[i] = -ops->data[i];
+        #pragma acc parallel copy(data[0:items])
+        for(i = 0; i < items; ++i)
+            data[i] = -data[i];
     }
     else // compute factorial
     {
@@ -248,7 +249,7 @@ int main(int argc, char **argv)
             // determine the data value based on the step size
             ops.data[i] = (i/step_size) + 1;
         }
-        //printf("data %d\n", ops.data[i]);
+      //  printf("data %d\n", ops.data[i]);
     }
     
     // start timer
@@ -264,61 +265,6 @@ int main(int argc, char **argv)
 
     timespec_diff(start_time, end_time, &diff_time);
 
-    // print the input values
-/*    printf("Number of tasks: %d\n", ops.num_tasks);
-    printf("Number of items: %d\n", ops.num_items);
-    printf("Distribution: ");
-    if(ops.distribution == BLOCK)
-        printf("BLOCK\n");
-    else if(ops.distribution == CYCLIC)
-        printf("CYCLIC\n");
-    printf("Input Deck: ");
-    if(input_deck == RANDOM)
-        printf("RANDOM\n");
-    else if(input_deck == VALUE_RAMP)
-        printf("VALUE_RAMP\n");
-    printf("Max Value: %d\n", max_value);
-    printf("Operation: ");
-    if(ops.operation == FACTORIAL)
-        printf("FACTORIAL\n");
-    else if(ops.operation == NEGATE)
-        printf("NEGATE\n");
-*/
-    // report results
-    printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
-/*
-    // start timer
-    if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
-        perror("Error from clock_gettime - getting start time!\n");
-
-    computeThreadHost(&tasks[0]);
-
-    // stop timer
-    if(clock_gettime(CLOCK_MONOTONIC, &end_time) != 0)
-        perror("Error from clock_gettime - getting end time!\n");
-
-    timespec_diff(start_time, end_time, &diff_time);
-*/
-    // print the input values
-/*    printf("Number of tasks: %d\n", ops.num_tasks);
-    printf("Number of items: %d\n", ops.num_items);
-    printf("Distribution: ");
-    if(ops.distribution == BLOCK)
-        printf("BLOCK\n");
-    else if(ops.distribution == CYCLIC)
-        printf("CYCLIC\n");
-    printf("Input Deck: ");
-    if(input_deck == RANDOM)
-        printf("RANDOM\n");
-    else if(input_deck == VALUE_RAMP)
-        printf("VALUE_RAMP\n");
-    printf("Max Value: %d\n", max_value);
-    printf("Operation: ");
-    if(ops.operation == FACTORIAL)
-        printf("FACTORIAL\n");
-    else if(ops.operation == NEGATE)
-        printf("NEGATE\n");
-*/
     // report results
     printf("Overall time: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
     //for(i = 0; i < ops.num_items; ++i)
