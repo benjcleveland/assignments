@@ -85,7 +85,7 @@ void* computeThread(task_t *task)
     {
         // do the Negate computation
         //for(i = my_lo; i < my_hi; i += stride)
-        #pragma acc kernels loop
+        #pragma acc parallel loop
         for(i = 0; i < items; ++i)
             data[i] = -data[i];
     }
@@ -93,7 +93,7 @@ void* computeThread(task_t *task)
     {
         int64_t factorial;
         //for(i = my_lo; i < my_hi; i += stride)
-        #pragma acc kernels loop copy(data[0:items])
+        #pragma acc parallel loop copy(data[0:items])
         for(i = 0; i < items; ++i)
         {   
             factorial = 1;
@@ -318,6 +318,20 @@ int main(int argc, char **argv)
 
     // report results
     printf("Overall time Accel: %i.%09li\n", (int)(diff_time.tv_sec), diff_time.tv_nsec);
+
+
+    // fill in data
+    for(i = 0; i < ops.num_items; ++i)
+    {
+        if(input_deck == RANDOM) // limit the random value to the max value passed in
+            ops.data[i] = rand() % max_value;
+        else // value ramp 
+        {
+            // determine the data value based on the step size
+            ops.data[i] = (i/step_size) + 1;
+        }
+      //  printf("data %d\n", ops.data[i]);
+    }
 
     // start timer
     if(clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
